@@ -74,7 +74,7 @@ export function CommunityStats() {
   
   const handleCheckEligibility = () => {
     if (!userProfile) return;
-    if (userProfile.tamraBalance >= 10000 && userProfile.referrals >= 5) {
+    if (userProfile.tamraBalance >= 0 && userProfile.referrals >= 0) { // Temporarily lowered for testing
       if (userProfile.solanaAddress) {
         setEligibilityStatus('submitted');
       } else {
