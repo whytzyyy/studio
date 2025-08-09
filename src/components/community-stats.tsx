@@ -28,9 +28,9 @@ export function CommunityStats() {
 
   useEffect(() => {
     // Set event date only on client-side to avoid hydration mismatch
-    const pastDate = new Date();
-    pastDate.setDate(pastDate.getDate() - 1); // Set to yesterday to end the event
-    setEventDate(pastDate);
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 60); 
+    setEventDate(futureDate);
 
     // Listen to real-time updates for community stats
     const statsDocRef = doc(firestore, 'community-stats', 'live');
@@ -86,8 +86,7 @@ export function CommunityStats() {
     const balance = userProfile.tamraBalance || 0;
     const referrals = userProfile.referrals || 0;
 
-    // Temporarily lowered for testing
-    if (balance >= 0 && referrals >= 0) { 
+    if (balance >= 10000 && referrals >= 5) { 
       if (userProfile.solanaAddress) {
         setEligibilityStatus('submitted');
       } else {
