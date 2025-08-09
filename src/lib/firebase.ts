@@ -8,12 +8,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "REPLACE_WITH_YOUR_API_KEY",
-  authDomain: "REPLACE_WITH_YOUR_AUTH_DOMAIN",
-  projectId: "REPLACE_WITH_YOUR_PROJECT_ID",
-  storageBucket: "REPLACE_WITH_YOUR_STORAGE_BUCKET",
-  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
-  appId: "REPLACE_WITH_YOUR_APP_ID"
+  "projectId": "tamra-vault",
+  "appId": "1:715513488301:web:415d81e618f293455eb724",
+  "storageBucket": "tamra-vault.firebasestorage.app",
+  "apiKey": "AIzaSyAGlSNC3Fazz4Vm1p72rifBER9ruxN44RY",
+  "authDomain": "tamra-vault.firebaseapp.com",
+  "measurementId": "",
+  "messagingSenderId": "715513488301"
 };
 
 
