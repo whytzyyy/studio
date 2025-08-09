@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setLoading(true);
       setUser(user);
       if (user) {
         const userDocRef = doc(firestore, 'users', user.uid);
@@ -53,7 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             };
             setDoc(doc(firestore, 'users', user.uid), initialProfile);
           }
-          setLoading(false);
+          setLoading(false); // Moved loading state update here
         });
         return () => unsubProfile();
       } else {
@@ -144,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const value = { user, userProfile, loading, login, signup, logout, updateUserProfile, reauthenticate, updateUserPassword, updateUserBalance, claimNft };
 
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

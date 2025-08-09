@@ -21,7 +21,7 @@ export default function ProfilePage() {
       router.push('/');
     }
   }, [loading, user, router]);
-  
+
   useEffect(() => {
     if (userProfile) {
       setDisplayName(userProfile.displayName || '');
@@ -55,11 +55,12 @@ export default function ProfilePage() {
       console.error(error);
     }
   };
-  
-  if (loading || !user) {
+
+  if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
+  // user object would be available here if loading is false
   // We can safely assume userProfile is available if loading is false and user exists
   // but a fallback is good practice.
   if (!userProfile) {
@@ -77,7 +78,7 @@ export default function ProfilePage() {
           <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={user.email || ''} disabled className="bg-muted" />
+              <Input id="email" type="email" value={user?.email || ''} disabled className="bg-muted" />
             </div>
             <div>
               <Label htmlFor="displayName">Display Name</Label>
