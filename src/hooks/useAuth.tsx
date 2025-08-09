@@ -13,7 +13,7 @@ interface UserProfile {
   miningStreak: number;
   badges: string[];
   level: number;
-  completedTasks: number[];
+  completedTasks: string[]; // Changed to string to match Firestore document ID
 }
 interface AuthContextType {
   user: User | null;
@@ -27,7 +27,7 @@ interface AuthContextType {
   updateUserPassword: (newPass: string) => Promise<any>;
   updateUserBalance: (amount: number) => Promise<void>;
   updateUserStreak: (streak: number) => Promise<void>;
-  completeSocialTask: (taskId: number, reward: number) => Promise<void>;
+  completeSocialTask: (taskId: string, reward: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -208,7 +208,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
   }
 
-  const completeSocialTask = async (taskId: number, reward: number) => {
+  const completeSocialTask = async (taskId: string, reward: number) => {
     const user = auth.currentUser;
     if (user) {
       const userDocRef = doc(firestore, 'users', user.uid);
