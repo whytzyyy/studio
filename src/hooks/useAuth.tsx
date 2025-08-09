@@ -9,6 +9,7 @@ interface UserProfile {
   email: string;
   photoURL: string;
   tamraBalance: number;
+  hasClaimedNft?: boolean;
 }
 interface AuthContextType {
   user: User | null;
@@ -21,6 +22,7 @@ interface AuthContextType {
   reauthenticate: (password: string) => Promise<any>;
   updateUserPassword: (newPass: string) => Promise<any>;
   updateUserBalance: (amount: number) => Promise<void>;
+  claimNft: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,6 +49,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               email: user.email || '',
               photoURL: user.photoURL || '',
               tamraBalance: 0,
+              hasClaimedNft: false,
             };
             setDoc(doc(firestore, 'users', user.uid), initialProfile);
           }
@@ -78,6 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         tamraBalance: 0,
         referrals: 0, // Initialize referrals count
         createdAt: new Date().toISOString(),
+        hasClaimedNft: false,
       });
     }
     return userCredential;
@@ -126,8 +130,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const claimNft = async () => {
+    const user = auth.currentUser;
+    if (user) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      await updateDoc(userDocRef, {
+        hasClaimedNft: true,
+      });
+    } else {
+      throw new Error("No user logged in to claim NFT.");
+    }
+  };
 
-  const value = { user, userProfile, loading, login, signup, logout, updateUserProfile, reauthenticate, updateUserPassword, updateUserBalance };
+  const value = { user, userProfile, loading, login, signup, logout, updateUserProfile, reauthenticate, updateUserPassword, updateUserBalance, claimNft };
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
