@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Image from 'next/image';
+import { ShieldCheck } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, loading, updateUserProfile, reauthenticate, updateUserPassword } = useAuth();
+  const { user, userProfile, loading, updateUserProfile, reauthenticate, updateUserPassword } = useAuth();
   const router = useRouter();
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [newPassword, setNewPassword] = useState('');
@@ -48,17 +50,17 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center bg-gray-900 text-white">
-      <Card className="w-full max-w-lg bg-gray-800 border-gray-700">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-lg bg-card border-primary/20">
         <CardHeader>
           <CardTitle>Profile</CardTitle>
-          <CardDescription>Manage your account settings.</CardDescription>
+          <CardDescription>Manage your account settings and view your achievements.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={user.email || ''} disabled className="bg-gray-700" />
+              <Input id="email" type="email" value={user.email || ''} disabled className="bg-muted" />
             </div>
             <div>
               <Label htmlFor="displayName">Display Name</Label>
@@ -67,7 +69,31 @@ export default function ProfilePage() {
             <Button type="submit">Update Profile</Button>
           </form>
 
-          <hr className="border-gray-600" />
+          <hr className="border-border/50" />
+
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2"><ShieldCheck className="text-accent" /> Achievements</h3>
+            {userProfile?.hasClaimedNft ? (
+                <div className="mt-4 flex items-center gap-4 rounded-lg border border-primary/20 p-4 bg-card/50">
+                    <Image
+                        src="https://placehold.co/300x300.png"
+                        alt="Early Supporter NFT Badge"
+                        width={80}
+                        height={80}
+                        data-ai-hint="copper badge"
+                        className="rounded-full border-2 border-primary"
+                    />
+                    <div>
+                        <p className="font-bold text-foreground">Early Supporter NFT</p>
+                        <p className="text-sm text-muted-foreground">You are a pioneer of the Tamra ecosystem. Thank you!</p>
+                    </div>
+                </div>
+            ) : (
+                <p className="mt-2 text-sm text-muted-foreground">No badges earned yet. Keep participating!</p>
+            )}
+          </div>
+
+          <hr className="border-border/50" />
 
           <form onSubmit={handleUpdatePassword} className="space-y-4">
             <h3 className="text-lg font-semibold">Change Password</h3>
