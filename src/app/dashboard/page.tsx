@@ -11,6 +11,7 @@ import { LogoAnimation } from "@/components/logo-animation";
 import { ReferralProgram } from "@/components/referral-program";
 import { SocialTasks } from "@/components/social-tasks";
 import { Separator } from "@/components/ui/separator";
+import { UserBalance } from '@/components/user-balance';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -41,6 +42,7 @@ export default function DashboardPage() {
             Welcome back, {user.displayName || user.email}! Mine daily, complete tasks, and refer
             friends to grow your vault.
           </p>
+          <UserBalance />
         </div>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">

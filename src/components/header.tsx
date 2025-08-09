@@ -3,8 +3,6 @@ import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
-import { User } from 'lucide-react';
-import { UserBalance } from './user-balance';
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -21,7 +19,6 @@ export function Header() {
       <div className="flex items-center gap-4">
         {user ? (
           <>
-            <UserBalance />
             <Button onClick={handleLogout} variant="outline">
               Logout
             </Button>
