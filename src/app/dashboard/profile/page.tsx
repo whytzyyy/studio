@@ -10,7 +10,7 @@ import { useEffect, useState } from 'react';
 export default function ProfilePage() {
   const { user, userProfile, loading, updateUserProfile, reauthenticate, updateUserPassword } = useAuth();
   const router = useRouter();
-  const [displayName, setDisplayName] = useState('');
+  const [displayName, setDisplayName] = useState(userProfile?.displayName || '');
   const [newPassword, setNewPassword] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
 
@@ -54,9 +54,14 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading || !userProfile) {
+  if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
+  
+  if (!userProfile) {
+     return <div className="flex h-screen items-center justify-center">Loading profile...</div>;
+  }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
