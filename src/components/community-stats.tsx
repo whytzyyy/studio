@@ -73,8 +73,21 @@ export function CommunityStats() {
   }, [eventDate]);
   
   const handleCheckEligibility = () => {
-    if (!userProfile) return;
-    if (userProfile.tamraBalance >= 0 && userProfile.referrals >= 0) { // Temporarily lowered for testing
+    if (!userProfile) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not load user profile. Please try again.",
+        });
+        return;
+    }
+
+    // Use default values of 0 if properties don't exist
+    const balance = userProfile.tamraBalance || 0;
+    const referrals = userProfile.referrals || 0;
+
+    // Temporarily lowered for testing
+    if (balance >= 0 && referrals >= 0) { 
       if (userProfile.solanaAddress) {
         setEligibilityStatus('submitted');
       } else {
