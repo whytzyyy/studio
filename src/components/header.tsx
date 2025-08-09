@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth';
 import Link from 'next/link';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
+import { User } from 'lucide-react';
 
 export function Header() {
   const { user, logout } = useAuth();
@@ -20,7 +21,7 @@ export function Header() {
         {user ? (
           <>
             <Button asChild variant="ghost">
-              <Link href="/dashboard">Dashboard</Link>
+              <Link href="/dashboard/profile"><User className="mr-2 h-4 w-4"/> Profile</Link>
             </Button>
             <Button onClick={handleLogout} variant="outline">
               Logout
@@ -29,7 +30,7 @@ export function Header() {
         ) : (
           <>
             <Button asChild variant="ghost">
-              <Link href="/login">Login</Link>
+              <Link href="/">Login</Link>
             </Button>
             <Button asChild className="bg-copper-gradient text-primary-foreground hover:opacity-90">
               <Link href="/signup">Sign Up</Link>

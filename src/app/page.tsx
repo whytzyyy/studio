@@ -1,51 +1,95 @@
-import { BackgroundParticles } from "@/components/background-particles";
-import { CommunityStats } from "@/components/community-stats";
-import { DailyMining } from "@/components/daily-mining";
-import { GamificationFeatures } from "@/components/gamification-features";
-import { Header } from "@/components/header";
-import { LogoAnimation } from "@/components/logo-animation";
-import { NftBadge } from "@/components/nft-badge";
-import { ReferralProgram } from "@/components/referral-program";
-import { SocialTasks } from "@/components/social-tasks";
-import { Separator } from "@/components/ui/separator";
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import Link from 'next/link';
+import { LogoAnimation } from '@/components/logo-animation';
+import { BackgroundParticles } from '@/components/background-particles';
 
-export default function Home() {
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const { login, user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, loading, router]);
+
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      await login(email, password);
+      router.push('/dashboard');
+    } catch (err) {
+      setError('Failed to log in. Please check your credentials.');
+    }
+  };
+
+  if (loading || user) {
+      return (
+        <div className="flex h-screen items-center justify-center bg-background">
+            Loading...
+        </div>
+      )
+  }
+
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-background font-body text-foreground">
-      <BackgroundParticles />
-      <Header />
-      <div className="relative z-10 mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-col items-center justify-center space-y-8 py-12 text-center pt-24">
-          <LogoAnimation />
-          <p className="max-w-2xl text-lg text-muted-foreground">
-            Join the Tamra revolution. Mine daily, complete tasks, and refer
-            friends to earn TAMRA tokens before the official launch.
-          </p>
+        <BackgroundParticles />
+        <div className="relative z-10 flex h-screen items-center justify-center text-white">
+            <Card className="w-full max-w-sm bg-card/80 backdrop-blur-sm border-primary/20">
+                <CardHeader className="items-center text-center">
+                    <LogoAnimation />
+                    <CardTitle className="text-2xl">Welcome Back</CardTitle>
+                    <CardDescription>Enter your credentials to access your vault.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                        id="email"
+                        type="email"
+                        placeholder="m@example.com"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    </div>
+                    <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                        id="password"
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                    </div>
+                    {error && <p className="text-sm text-destructive">{error}</p>}
+                    <Button type="submit" className="w-full bg-copper-gradient text-primary-foreground hover:opacity-90">
+                    Login
+                    </Button>
+                </form>
+                <div className="mt-4 text-center text-sm">
+                    Don&apos;t have an account?{' '}
+                    <Link href="/signup" className="underline text-accent">
+                    Sign up
+                    </Link>
+                </div>
+                </CardContent>
+            </Card>
         </div>
-
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          <div className="md:col-span-2">
-            <DailyMining />
-          </div>
-          <div className="md:col-span-1">
-            <CommunityStats />
-          </div>
-        </div>
-
-        <Separator className="my-12 bg-primary/10" />
-
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <ReferralProgram />
-          <SocialTasks />
-        </div>
-
-        <Separator className="my-12 bg-primary/10" />
-
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <GamificationFeatures />
-          <NftBadge />
-        </div>
-      </div>
     </main>
   );
 }
