@@ -10,16 +10,20 @@ import { useEffect, useState } from 'react';
 export default function ProfilePage() {
   const { user, userProfile, loading, updateUserProfile, reauthenticate, updateUserPassword } = useAuth();
   const router = useRouter();
-  const [displayName, setDisplayName] = useState(userProfile?.displayName || '');
+  
+  // State for form inputs
+  const [displayName, setDisplayName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
 
+  // Effect to redirect if not logged in
   useEffect(() => {
     if (!loading && !user) {
       router.push('/');
     }
   }, [loading, user, router]);
 
+  // Effect to set initial display name from user profile
   useEffect(() => {
     if (userProfile) {
       setDisplayName(userProfile.displayName || '');
@@ -32,8 +36,13 @@ export default function ProfilePage() {
       alert('Display name cannot be empty.');
       return;
     }
-    await updateUserProfile({ displayName });
-    alert('Profile updated!');
+    try {
+        await updateUserProfile({ displayName });
+        alert('Profile updated!');
+    } catch (error) {
+        alert('Failed to update profile.');
+        console.error(error);
+    }
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -54,15 +63,24 @@ export default function ProfilePage() {
     }
   };
 
+  // --- Render Logic ---
+
+  // 1. Show main loading indicator while auth is being checked
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
   
-  if (!userProfile) {
+  // 2. After auth check, if there's a user but no profile yet (firestore fetch pending), show profile loading
+  if (user && !userProfile) {
      return <div className="flex h-screen items-center justify-center">Loading profile...</div>;
   }
 
+  // 3. If there is no user, we are redirecting, so render nothing to avoid flicker
+  if (!user) {
+    return null;
+  }
 
+  // 4. If we have the user and their profile, render the page
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-lg bg-card border-primary/20">
@@ -74,7 +92,7 @@ export default function ProfilePage() {
           <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={user?.email || ''} disabled className="bg-muted" />
+              <Input id="email" type="email" value={user.email || ''} disabled className="bg-muted" />
             </div>
             <div>
               <Label htmlFor="displayName">Display Name</Label>
