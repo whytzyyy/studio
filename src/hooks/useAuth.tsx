@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential } from 'firebase/auth';
@@ -14,6 +15,7 @@ interface UserProfile {
   badges: string[];
   level: number;
   completedTasks: string[]; // Changed to string to match Firestore document ID
+  solanaAddress?: string;
 }
 interface AuthContextType {
   user: User | null;
@@ -28,6 +30,7 @@ interface AuthContextType {
   updateUserBalance: (amount: number) => Promise<void>;
   updateUserStreak: (streak: number) => Promise<void>;
   completeSocialTask: (taskId: string, reward: number) => Promise<void>;
+  submitSolanaAddress: (address: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -236,6 +239,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const submitSolanaAddress = async (address: string) => {
+    const user = auth.currentUser;
+    if (user) {
+        const userDocRef = doc(firestore, 'users', user.uid);
+        await updateDoc(userDocRef, { solanaAddress: address });
+    } else {
+        throw new Error("You must be logged in to submit an address.");
+    }
+  };
+
   const value = { 
     user, 
     userProfile, 
@@ -248,7 +261,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     updateUserPassword, 
     updateUserBalance, 
     updateUserStreak,
-    completeSocialTask 
+    completeSocialTask,
+    submitSolanaAddress
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
