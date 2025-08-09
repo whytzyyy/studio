@@ -56,8 +56,14 @@ export default function ProfilePage() {
     }
   };
   
-  if (loading || !userProfile) {
+  if (loading || !user) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+  // We can safely assume userProfile is available if loading is false and user exists
+  // but a fallback is good practice.
+  if (!userProfile) {
+    return <div className="flex h-screen items-center justify-center">Loading profile...</div>;
   }
 
   return (
