@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,16 +8,44 @@ import { Copy, UserPlus, Trophy } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { firestore } from '@/lib/firebase';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
 const referralLink = "https://tamravault.io/invite/aB1c2D3e";
-const topReferrers = [
-  { rank: 1, name: "CryptoKing", referrals: 152, avatar: "https://placehold.co/40x40.png" },
-  { rank: 2, name: "ShillMaster", referrals: 121, avatar: "https://placehold.co/40x40.png" },
-  { rank: 3, name: "TokenHuntress", referrals: 98, avatar: "https://placehold.co/40x40.png" },
-];
+
+interface Referrer {
+  id: string;
+  rank: number;
+  name: string;
+  referrals: number;
+  avatar: string;
+}
 
 export function ReferralProgram() {
   const { toast } = useToast();
+  const [topReferrers, setTopReferrers] = useState<Referrer[]>([]);
+
+  useEffect(() => {
+    const usersRef = collection(firestore, 'users');
+    const q = query(usersRef, orderBy('referrals', 'desc'), limit(3));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const referrers: Referrer[] = [];
+      querySnapshot.forEach((doc, index) => {
+        const data = doc.data();
+        referrers.push({
+          id: doc.id,
+          rank: index + 1,
+          name: data.displayName || 'Anonymous',
+          referrals: data.referrals || 0,
+          avatar: data.photoURL || `https://placehold.co/40x40.png`,
+        });
+      });
+      setTopReferrers(referrers);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
@@ -56,7 +85,7 @@ export function ReferralProgram() {
             </TableHeader>
             <TableBody>
               {topReferrers.map((user) => (
-                <TableRow key={user.rank}>
+                <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.rank}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">

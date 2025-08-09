@@ -3,35 +3,35 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Gem, Clock } from 'lucide-react';
+import { firestore } from '@/lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 export function CommunityStats() {
-  const [members, setMembers] = useState(123456);
-  const [tamraClaimed, setTamraClaimed] = useState(7890123);
+  const [members, setMembers] = useState(0);
+  const [tamraClaimed, setTamraClaimed] = useState(0);
   const [eventDate, setEventDate] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
     // Set event date only on client-side to avoid hydration mismatch
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 30);
     setEventDate(futureDate);
-  }, []);
-  
-  useEffect(() => {
-    const memberInterval = setInterval(() => {
-      setMembers(prev => prev + Math.floor(Math.random() * 3));
-    }, 2500);
 
-    const tamraInterval = setInterval(() => {
-      setTamraClaimed(prev => prev + Math.floor(Math.random() * 50) + 20);
-    }, 1500);
+    // Listen to real-time updates for community stats
+    const statsDocRef = doc(firestore, 'community-stats', 'live');
+    const unsubscribe = onSnapshot(statsDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setMembers(data.totalMembers || 0);
+        setTamraClaimed(data.totalTamraClaimed || 0);
+      } else {
+        // You might want to initialize this document in your backend
+        console.log("No community stats document!");
+      }
+    });
 
-    return () => {
-      clearInterval(memberInterval);
-      clearInterval(tamraInterval);
-    };
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -41,14 +41,13 @@ export function CommunityStats() {
       const now = new Date();
       const difference = eventDate.getTime() - now.getTime();
 
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((difference / 1000 / 60) % 60);
-      const seconds = Math.floor((difference / 1000) % 60);
-
-      setTimeLeft({ days, hours, minutes, seconds });
-
-      if (difference < 0) {
+      if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+        const minutes = Math.floor((difference / 1000 / 60) % 60);
+        const seconds = Math.floor((difference / 1000) % 60);
+        setTimeLeft({ days, hours, minutes, seconds });
+      } else {
         clearInterval(timer);
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
       }
@@ -69,7 +68,7 @@ export function CommunityStats() {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Total Members</p>
-            <p className="text-2xl font-bold">{isClient ? members.toLocaleString() : members}</p>
+            <p className="text-2xl font-bold">{members.toLocaleString()}</p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
@@ -78,7 +77,7 @@ export function CommunityStats() {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Total TAMRA Claimed</p>
-            <p className="text-2xl font-bold">{isClient ? tamraClaimed.toLocaleString() : tamraClaimed}</p>
+            <p className="text-2xl font-bold">{tamraClaimed.toLocaleString()}</p>
           </div>
         </div>
         <div>
