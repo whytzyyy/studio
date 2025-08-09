@@ -1,10 +1,18 @@
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, firestore } from '@/lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
+interface UserProfile {
+  displayName: string;
+  email: string;
+  photoURL: string;
+  tamraBalance: number;
+}
 interface AuthContextType {
   user: User | null;
+  userProfile: UserProfile | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<any>;
   signup: (email: string, pass: string) => Promise<any>;
@@ -18,12 +26,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      setLoading(false);
+      if (user) {
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const unsubProfile = onSnapshot(userDocRef, (doc) => {
+          if (doc.exists()) {
+            setUserProfile(doc.data() as UserProfile);
+          } else {
+            // Handle case where user exists in Auth but not in Firestore
+            setUserProfile(null);
+          }
+          setLoading(false);
+        });
+        return () => unsubProfile();
+      } else {
+        setUserProfile(null);
+        setLoading(false);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -64,7 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return Promise.reject('No user to update password for.');
   };
 
-  const value = { user, loading, login, signup, logout, updateUserProfile, reauthenticate, updateUserPassword };
+  const value = { user, userProfile, loading, login, signup, logout, updateUserProfile, reauthenticate, updateUserPassword };
 
   return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
