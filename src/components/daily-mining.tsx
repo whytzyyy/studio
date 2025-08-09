@@ -5,22 +5,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Clock } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from "@/hooks/use-toast";
 
 const COOLDOWN_HOURS = 24;
 
 export function DailyMining() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [lastClaim, setLastClaim] = useState<number | null>(null);
+  const { user, userProfile, updateUserBalance, updateUserStreak } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const storedLastClaim = localStorage.getItem('tamra-last-claim');
+    if (!user) return;
+    const storedLastClaim = localStorage.getItem(`tamra-last-claim-${user.uid}`);
     if (storedLastClaim) {
       setLastClaim(Number(storedLastClaim));
     } else {
         // If no claim is stored, user can claim immediately
         setTimeLeft(0);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (lastClaim === null) return;
@@ -42,11 +47,43 @@ export function DailyMining() {
     return () => clearInterval(interval);
   }, [lastClaim]);
 
-  const handleClaim = () => {
+  const handleClaim = async () => {
+    if (!user) return;
     const now = Date.now();
-    setLastClaim(now);
-    localStorage.setItem('tamra-last-claim', String(now));
-    // In a real app, you would also update the user's balance on a server
+    
+    // Streak logic
+    const lastClaimDate = lastClaim ? new Date(lastClaim) : null;
+    const today = new Date();
+    let newStreak = userProfile?.miningStreak || 0;
+
+    if (lastClaimDate) {
+        const hoursSinceLastClaim = (now - lastClaim) / (1000 * 60 * 60);
+        if (hoursSinceLastClaim < 48) { // Continued streak
+            newStreak++;
+        } else { // Streak broken
+            newStreak = 1;
+        }
+    } else { // First claim
+        newStreak = 1;
+    }
+
+    try {
+        await updateUserBalance(50);
+        await updateUserStreak(newStreak);
+        setLastClaim(now);
+        localStorage.setItem(`tamra-last-claim-${user.uid}`, String(now));
+        toast({
+            title: 'Claim Successful!',
+            description: `You've claimed 50 TAMRA. Your mining streak is now ${newStreak} days!`,
+        });
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to claim tokens. Please try again.",
+        });
+        console.error("Failed to claim:", error);
+    }
   };
   
   const isClaimable = timeLeft <= 0;

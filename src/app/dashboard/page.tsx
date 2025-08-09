@@ -12,6 +12,7 @@ import { ReferralProgram } from "@/components/referral-program";
 import { SocialTasks } from "@/components/social-tasks";
 import { Separator } from "@/components/ui/separator";
 import { UserBalance } from '@/components/user-balance';
+import { UserBadges } from '@/components/user-badges';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -36,13 +37,14 @@ export default function DashboardPage() {
       <BackgroundParticles />
       <Header />
       <div className="relative z-10 mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-col items-center justify-center space-y-8 py-12 text-center pt-24">
+        <div className="flex flex-col items-center justify-center space-y-4 py-12 text-center pt-24">
           <LogoAnimation />
           <p className="max-w-2xl text-lg text-muted-foreground">
             Welcome back, {user.displayName || user.email}! Mine daily, complete tasks, and refer
             friends to grow your vault.
           </p>
           <UserBalance />
+          <UserBadges />
         </div>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">

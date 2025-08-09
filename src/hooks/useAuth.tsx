@@ -2,14 +2,16 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential } from 'firebase/auth';
 import { auth, firestore } from '@/lib/firebase';
-import { doc, onSnapshot, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
 
 interface UserProfile {
   displayName: string;
   email: string;
   photoURL: string;
   tamraBalance: number;
-  hasClaimedNft?: boolean;
+  referrals: number;
+  miningStreak: number;
+  badges: string[];
 }
 interface AuthContextType {
   user: User | null;
@@ -22,6 +24,7 @@ interface AuthContextType {
   reauthenticate: (password: string) => Promise<any>;
   updateUserPassword: (newPass: string) => Promise<any>;
   updateUserBalance: (amount: number) => Promise<void>;
+  updateUserStreak: (streak: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,17 +41,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(firestore, 'users', user.uid);
         const unsubProfile = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
-            setUserProfile(docSnap.data() as UserProfile);
+            const profileData = docSnap.data() as UserProfile;
+            // Check for badges on profile load
+            checkForBadges(user.uid, profileData);
+            setUserProfile(profileData);
           } else {
-            // This might happen if the doc creation failed after signup.
-            // We can attempt to create it here as a fallback.
             const userEmail = user.email || 'Anonymous';
             const initialProfile: UserProfile = {
               displayName: user.displayName || userEmail.split('@')[0],
               email: user.email || '',
               photoURL: user.photoURL || '',
               tamraBalance: 0,
-              hasClaimedNft: false,
+              referrals: 0,
+              miningStreak: 0,
+              badges: ['pioneer'], // Award pioneer badge on creation
             };
             setDoc(doc(firestore, 'users', user.uid), initialProfile);
           }
@@ -62,6 +68,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     return () => unsubscribe();
   }, []);
+  
+  const checkForBadges = async (uid: string, profile: UserProfile) => {
+    const userDocRef = doc(firestore, 'users', uid);
+    const badgesToAward: string[] = [];
+
+    // Pioneer badge (should be added at signup, this is a fallback)
+    if (!profile.badges.includes('pioneer')) {
+        badgesToAward.push('pioneer');
+    }
+    
+    // Serial Miner badge
+    if (profile.miningStreak >= 7 && !profile.badges.includes('serial_miner')) {
+        badgesToAward.push('serial_miner');
+    }
+
+    // Socialite badge
+    if (profile.referrals > 20 && !profile.badges.includes('socialite')) {
+        badgesToAward.push('socialite');
+    }
+
+    if (badgesToAward.length > 0) {
+        await updateDoc(userDocRef, {
+            badges: arrayUnion(...badgesToAward)
+        });
+    }
+  }
+
 
   const login = (email: string, pass: string) => {
     return signInWithEmailAndPassword(auth, email, pass);
@@ -78,9 +111,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email: user.email,
         photoURL: '',
         tamraBalance: 0,
-        referrals: 0, // Initialize referrals count
+        referrals: 0,
+        miningStreak: 0,
         createdAt: new Date().toISOString(),
-        hasClaimedNft: false,
+        badges: ['pioneer']
       });
     }
     return userCredential;
@@ -128,9 +162,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       throw new Error("No user logged in to update balance.");
     }
   };
+  
+  const updateUserStreak = async (streak: number) => {
+      const user = auth.currentUser;
+      if (user) {
+          const userDocRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userDocRef, { miningStreak: streak });
+      } else {
+          throw new Error("No user logged in to update streak.");
+      }
+  }
 
 
-  const value = { user, userProfile, loading, login, signup, logout, updateUserProfile, reauthenticate, updateUserPassword, updateUserBalance };
+  const value = { user, userProfile, loading, login, signup, logout, updateUserProfile, reauthenticate, updateUserPassword, updateUserBalance, updateUserStreak };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
