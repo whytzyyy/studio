@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Gem, Clock } from 'lucide-react';
 import { firestore } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { Button } from './ui/button';
 
 export function CommunityStats() {
   const [members, setMembers] = useState(0);
   const [tamraClaimed, setTamraClaimed] = useState(0);
   const [eventDate, setEventDate] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [isEventOver, setIsEventOver] = useState(false);
 
   useEffect(() => {
     // Set event date only on client-side to avoid hydration mismatch
@@ -47,9 +49,11 @@ export function CommunityStats() {
         const minutes = Math.floor((difference / 1000 / 60) % 60);
         const seconds = Math.floor((difference / 1000) % 60);
         setTimeLeft({ days, hours, minutes, seconds });
+        setIsEventOver(false);
       } else {
         clearInterval(timer);
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        setIsEventOver(true);
       }
     }, 1000);
 
@@ -83,26 +87,32 @@ export function CommunityStats() {
         <div>
           <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-muted-foreground">
             <Clock className="h-4 w-4" />
-            Special Event Countdown
+            Special Event
           </h3>
-          <div className="grid grid-cols-4 gap-2 text-center">
-            <div>
-              <p className="font-mono text-2xl font-bold text-copper-gradient">{String(timeLeft.days).padStart(2, '0')}</p>
-              <p className="text-xs text-muted-foreground">Days</p>
+          {isEventOver ? (
+            <Button className="w-full bg-copper-gradient text-primary-foreground hover:opacity-90">
+              Check Eligibility
+            </Button>
+          ) : (
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div>
+                <p className="font-mono text-2xl font-bold text-copper-gradient">{String(timeLeft.days).padStart(2, '0')}</p>
+                <p className="text-xs text-muted-foreground">Days</p>
+              </div>
+              <div>
+                <p className="font-mono text-2xl font-bold text-copper-gradient">{String(timeLeft.hours).padStart(2, '0')}</p>
+                <p className="text-xs text-muted-foreground">Hours</p>
+              </div>
+              <div>
+                <p className="font-mono text-2xl font-bold text-copper-gradient">{String(timeLeft.minutes).padStart(2, '0')}</p>
+                <p className="text-xs text-muted-foreground">Mins</p>
+              </div>
+              <div>
+                <p className="font-mono text-2xl font-bold text-copper-gradient">{String(timeLeft.seconds).padStart(2, '0')}</p>
+                <p className="text-xs text-muted-foreground">Secs</p>
+              </div>
             </div>
-            <div>
-              <p className="font-mono text-2xl font-bold text-copper-gradient">{String(timeLeft.hours).padStart(2, '0')}</p>
-              <p className="text-xs text-muted-foreground">Hours</p>
-            </div>
-            <div>
-              <p className="font-mono text-2xl font-bold text-copper-gradient">{String(timeLeft.minutes).padStart(2, '0')}</p>
-              <p className="text-xs text-muted-foreground">Mins</p>
-            </div>
-            <div>
-              <p className="font-mono text-2xl font-bold text-copper-gradient">{String(timeLeft.seconds).padStart(2, '0')}</p>
-              <p className="text-xs text-muted-foreground">Secs</p>
-            </div>
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>
