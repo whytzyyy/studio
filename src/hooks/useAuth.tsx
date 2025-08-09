@@ -22,7 +22,6 @@ interface AuthContextType {
   reauthenticate: (password: string) => Promise<any>;
   updateUserPassword: (newPass: string) => Promise<any>;
   updateUserBalance: (amount: number) => Promise<void>;
-  claimNft: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,7 +33,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setLoading(true);
       setUser(user);
       if (user) {
         const userDocRef = doc(firestore, 'users', user.uid);
@@ -54,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             };
             setDoc(doc(firestore, 'users', user.uid), initialProfile);
           }
-          setLoading(false); // Moved loading state update here
+          setLoading(false); 
         });
         return () => unsubProfile();
       } else {
@@ -131,19 +129,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const claimNft = async () => {
-    const user = auth.currentUser;
-    if (user) {
-      const userDocRef = doc(firestore, 'users', user.uid);
-      await updateDoc(userDocRef, {
-        hasClaimedNft: true,
-      });
-    } else {
-      throw new Error("No user logged in to claim NFT.");
-    }
-  };
 
-  const value = { user, userProfile, loading, login, signup, logout, updateUserProfile, reauthenticate, updateUserPassword, updateUserBalance, claimNft };
+  const value = { user, userProfile, loading, login, signup, logout, updateUserProfile, reauthenticate, updateUserPassword, updateUserBalance };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

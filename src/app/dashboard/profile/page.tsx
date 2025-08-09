@@ -6,8 +6,6 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import { ShieldCheck } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, userProfile, loading, updateUserProfile, reauthenticate, updateUserPassword } = useAuth();
@@ -65,7 +63,7 @@ export default function ProfilePage() {
       <Card className="w-full max-w-lg bg-card border-primary/20">
         <CardHeader>
           <CardTitle>Profile</CardTitle>
-          <CardDescription>Manage your account settings and view your achievements.</CardDescription>
+          <CardDescription>Manage your account settings.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <form onSubmit={handleUpdateProfile} className="space-y-4">
@@ -79,30 +77,6 @@ export default function ProfilePage() {
             </div>
             <Button type="submit">Update Profile</Button>
           </form>
-
-          <hr className="border-border/50" />
-
-          <div>
-            <h3 className="text-lg font-semibold flex items-center gap-2"><ShieldCheck className="text-accent" /> Achievements</h3>
-            {userProfile?.hasClaimedNft ? (
-                <div className="mt-4 flex items-center gap-4 rounded-lg border border-primary/20 p-4 bg-card/50">
-                    <Image
-                        src="https://placehold.co/300x300.png"
-                        alt="Early Supporter NFT Badge"
-                        width={80}
-                        height={80}
-                        data-ai-hint="copper badge"
-                        className="rounded-full border-2 border-primary"
-                    />
-                    <div>
-                        <p className="font-bold text-foreground">Early Supporter NFT</p>
-                        <p className="text-sm text-muted-foreground">You are a pioneer of the Tamra ecosystem. Thank you!</p>
-                    </div>
-                </div>
-            ) : (
-                <p className="mt-2 text-sm text-muted-foreground">No badges earned yet. Keep participating!</p>
-            )}
-          </div>
 
           <hr className="border-border/50" />
 

@@ -8,7 +8,6 @@ import { DailyMining } from "@/components/daily-mining";
 import { GamificationFeatures } from "@/components/gamification-features";
 import { Header } from "@/components/header";
 import { LogoAnimation } from "@/components/logo-animation";
-import { NftBadge } from "@/components/nft-badge";
 import { ReferralProgram } from "@/components/referral-program";
 import { SocialTasks } from "@/components/social-tasks";
 import { Separator } from "@/components/ui/separator";
@@ -62,10 +61,8 @@ export default function DashboardPage() {
 
         <Separator className="my-12 bg-primary/10" />
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          <GamificationFeatures />
-          <NftBadge />
-        </div>
+        <GamificationFeatures />
+        
       </div>
     </main>
   );
