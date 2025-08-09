@@ -18,16 +18,22 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/login');
+      router.push('/');
     }
-    if (user && userProfile) {
+  }, [loading, user, router]);
+  
+  useEffect(() => {
+    if (userProfile) {
       setDisplayName(userProfile.displayName || '');
     }
-  }, [loading, user, userProfile, router]);
-
+  }, [userProfile]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!displayName.trim()) {
+      alert('Display name cannot be empty.');
+      return;
+    }
     await updateUserProfile({ displayName });
     alert('Profile updated!');
   };
@@ -50,7 +56,7 @@ export default function ProfilePage() {
     }
   };
   
-  if (loading || !user) {
+  if (loading || !userProfile) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
