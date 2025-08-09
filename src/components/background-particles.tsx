@@ -28,5 +28,10 @@ export function BackgroundParticles() {
     generateParticles();
   }, []);
 
-  return <div className="particles absolute top-0 left-0 w-full h-full overflow-hidden z-0">{particles}</div>;
+  return (
+    <div className="particles absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+      <div className="background-glow w-[150vmax] h-[150vmax]"></div>
+      {particles}
+    </div>
+  );
 }
