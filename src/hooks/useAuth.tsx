@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from 'firebase/auth';
+import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential } from 'firebase/auth';
 import { auth, firestore } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc, increment } from 'firebase/firestore';
 
 interface UserProfile {
   displayName: string;
@@ -39,8 +39,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (doc.exists()) {
             setUserProfile(doc.data() as UserProfile);
           } else {
-            // Handle case where user exists in Auth but not in Firestore
-            setUserProfile(null);
+            // This might happen if the doc creation failed after signup.
+            // We can attempt to create it here as a fallback.
+            const userEmail = user.email || 'Anonymous';
+            const initialProfile: UserProfile = {
+              displayName: user.displayName || userEmail.split('@')[0],
+              email: user.email || '',
+              photoURL: user.photoURL || '',
+              tamraBalance: 0,
+            };
+            setDoc(doc(firestore, 'users', user.uid), initialProfile);
           }
           setLoading(false);
         });
@@ -57,9 +65,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return signInWithEmailAndPassword(auth, email, pass);
   };
 
-  const signup = (email: string, pass: string) => {
-    return createUserWithEmailAndPassword(auth, email, pass);
+  const signup = async (email: string, pass: string): Promise<UserCredential> => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+    const user = userCredential.user;
+    if (user) {
+      // Create a document for the new user in Firestore
+      const userDocRef = doc(firestore, 'users', user.uid);
+      await setDoc(userDocRef, {
+        displayName: user.email?.split('@')[0] || 'New User',
+        email: user.email,
+        photoURL: '',
+        tamraBalance: 0,
+        referrals: 0, // Initialize referrals count
+        createdAt: new Date().toISOString(),
+      });
+    }
+    return userCredential;
   };
+
 
   const logout = () => {
     return signOut(auth);
@@ -67,6 +90,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const updateUserProfile = (profile: { displayName?: string; photoURL?: string; }) => {
       if(auth.currentUser){
+          const userDocRef = doc(firestore, 'users', auth.currentUser.uid);
+          updateDoc(userDocRef, profile); // Update Firestore as well
           return updateProfile(auth.currentUser, profile);
       }
       return Promise.reject(new Error("No user logged in"));
