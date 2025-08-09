@@ -2,7 +2,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential } from 'firebase/auth';
 import { auth, firestore } from '@/lib/firebase';
-import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
 
 interface UserProfile {
   displayName: string;
@@ -13,19 +13,21 @@ interface UserProfile {
   miningStreak: number;
   badges: string[];
   level: number;
+  completedTasks: number[];
 }
 interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
   login: (email: string, pass: string) => Promise<any>;
-  signup: (email: string, pass: string) => Promise<any>;
+  signup: (email: string, pass: string, referralCode?: string) => Promise<any>;
   logout: () => Promise<any>;
   updateUserProfile: (profile: { displayName?: string; photoURL?: string; }) => Promise<any>;
   reauthenticate: (password: string) => Promise<any>;
   updateUserPassword: (newPass: string) => Promise<any>;
   updateUserBalance: (amount: number) => Promise<void>;
   updateUserStreak: (streak: number) => Promise<void>;
+  completeSocialTask: (taskId: number, reward: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -46,6 +48,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             checkForBadges(user.uid, profileData);
             setUserProfile(profileData);
           } else {
+            // This case is primarily for users who signed up before firestore profile creation was implemented.
+            // New users are handled in the signup function.
             const userEmail = user.email || 'Anonymous';
             const initialProfile: UserProfile = {
               displayName: user.displayName || userEmail.split('@')[0],
@@ -56,8 +60,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               miningStreak: 0,
               badges: ['pioneer'], // Award pioneer badge on creation
               level: 1,
+              completedTasks: [],
             };
-            setDoc(doc(firestore, 'users', user.uid), initialProfile);
+            setDoc(userDocRef, initialProfile);
           }
           setLoading(false); 
         });
@@ -102,32 +107,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-
   const login = (email: string, pass: string) => {
     return signInWithEmailAndPassword(auth, email, pass);
   };
 
-  const signup = async (email: string, pass: string): Promise<UserCredential> => {
+  const signup = async (email: string, pass: string, referralCode?: string): Promise<UserCredential> => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    const user = userCredential.user;
-    if (user) {
-      // Create a document for the new user in Firestore
-      const userDocRef = doc(firestore, 'users', user.uid);
+    const newUser = userCredential.user;
+    
+    if (newUser) {
+      // Create document for the new user
+      const userDocRef = doc(firestore, 'users', newUser.uid);
       await setDoc(userDocRef, {
-        displayName: user.email?.split('@')[0] || 'New User',
-        email: user.email,
+        displayName: newUser.email?.split('@')[0] || 'New User',
+        email: newUser.email,
         photoURL: '',
         tamraBalance: 0,
         referrals: 0,
         miningStreak: 0,
         level: 1,
         createdAt: new Date().toISOString(),
-        badges: ['pioneer']
+        badges: ['pioneer'],
+        completedTasks: []
       });
+
+      // Handle referral if code is provided
+      if (referralCode) {
+        const referrerDocRef = doc(firestore, 'users', referralCode);
+        const referrerDoc = await getDoc(referrerDocRef);
+        if (referrerDoc.exists()) {
+          // Award referrer
+          await updateDoc(referrerDocRef, {
+            tamraBalance: increment(100),
+            referrals: increment(1)
+          });
+        }
+      }
     }
     return userCredential;
   };
-
 
   const logout = () => {
     return signOut(auth);
@@ -190,8 +208,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
   }
 
+  const completeSocialTask = async (taskId: number, reward: number) => {
+    const user = auth.currentUser;
+    if (user) {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      
+      // Use a transaction to ensure atomicity
+      await runTransaction(firestore, async (transaction) => {
+        const userDoc = await transaction.get(userDocRef);
+        if (!userDoc.exists()) {
+          throw new Error("User document does not exist!");
+        }
 
-  const value = { user, userProfile, loading, login, signup, logout, updateUserProfile, reauthenticate, updateUserPassword, updateUserBalance, updateUserStreak };
+        const completedTasks = userDoc.data().completedTasks || [];
+        if (completedTasks.includes(taskId)) {
+          throw new Error("You have already completed this task.");
+        }
+
+        transaction.update(userDocRef, {
+          tamraBalance: increment(reward),
+          completedTasks: arrayUnion(taskId)
+        });
+      });
+
+    } else {
+      throw new Error("You must be logged in to complete a task.");
+    }
+  };
+
+  const value = { 
+    user, 
+    userProfile, 
+    loading, 
+    login, 
+    signup, 
+    logout, 
+    updateUserProfile, 
+    reauthenticate, 
+    updateUserPassword, 
+    updateUserBalance, 
+    updateUserStreak,
+    completeSocialTask 
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

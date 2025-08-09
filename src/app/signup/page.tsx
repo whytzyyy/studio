@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,8 +16,17 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signup } = useAuth();
+
+  useEffect(() => {
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setReferralCode(refCode);
+    }
+  }, [searchParams]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,13 +38,13 @@ export default function SignupPage() {
     }
 
     try {
-      await signup(email, password);
-      // TODO: Add logic to handle referral code
+      await signup(email, password, referralCode || undefined);
       router.push('/dashboard');
     } catch (err: any) {
         if (err.code === 'auth/email-already-in-use') {
             setError('This email is already registered. Please log in.');
         } else {
+            console.error(err);
             setError('Failed to sign up. Please try again.');
         }
     }

@@ -10,8 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { firestore } from '@/lib/firebase';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { useAuth } from '@/hooks/useAuth';
 
-const referralLink = "https://tamravault.io/invite/aB1c2D3e";
 
 interface Referrer {
   id: string;
@@ -23,7 +23,10 @@ interface Referrer {
 
 export function ReferralProgram() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [topReferrers, setTopReferrers] = useState<Referrer[]>([]);
+
+  const referralLink = user ? `${window.location.origin}/signup?ref=${user.uid}` : "";
 
   useEffect(() => {
     const usersRef = collection(firestore, 'users');
@@ -48,6 +51,14 @@ export function ReferralProgram() {
   }, []);
 
   const handleCopy = () => {
+    if (!referralLink) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Could not generate your referral link.",
+        });
+        return;
+    }
     navigator.clipboard.writeText(referralLink);
     toast({
       title: "Copied to clipboard!",
@@ -66,7 +77,7 @@ export function ReferralProgram() {
           <label htmlFor="referral-link" className="text-sm font-medium text-muted-foreground">Your Personal Referral Link</label>
           <div className="flex items-center space-x-2 mt-1">
             <Input id="referral-link" type="text" value={referralLink} readOnly className="font-mono"/>
-            <Button variant="outline" size="icon" onClick={handleCopy}>
+            <Button variant="outline" size="icon" onClick={handleCopy} disabled={!referralLink}>
               <Copy className="h-4 w-4" />
               <span className="sr-only">Copy referral link</span>
             </Button>
