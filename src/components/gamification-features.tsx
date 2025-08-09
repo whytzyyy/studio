@@ -6,23 +6,40 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Award, Star, Zap, Dices } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/hooks/useAuth';
 
 export function GamificationFeatures() {
   const [spinResult, setSpinResult] = useState<number | null>(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const { toast } = useToast();
+  const { updateUserBalance } = useAuth();
+
 
   const handleSpin = () => {
+    if (isSpinning) return;
+
     setIsSpinning(true);
     setSpinResult(null);
+
     setTimeout(() => {
       const result = [10, 20, 50, 100, 200][Math.floor(Math.random() * 5)];
       setSpinResult(result);
       setIsSpinning(false);
-      toast({
-        title: 'Congratulations!',
-        description: `You won ${result} TAMRA from the lucky spin!`,
-      });
+      
+      try {
+        updateUserBalance(result);
+        toast({
+          title: 'Congratulations!',
+          description: `You won ${result} TAMRA from the lucky spin!`,
+        });
+      } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to update your balance. Please try again.",
+        });
+        console.error("Failed to update balance:", error);
+      }
     }, 2000);
   };
 
