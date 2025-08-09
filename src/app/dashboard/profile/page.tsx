@@ -5,25 +5,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { ShieldCheck } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, userProfile, loading, updateUserProfile, reauthenticate, updateUserPassword } = useAuth();
   const router = useRouter();
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [displayName, setDisplayName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
 
-  if (loading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
-  }
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+    if (user && userProfile) {
+      setDisplayName(userProfile.displayName || '');
+    }
+  }, [loading, user, userProfile, router]);
 
-  if (!user) {
-    router.push('/login');
-    return null;
-  }
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +49,10 @@ export default function ProfilePage() {
       console.error(error);
     }
   };
+  
+  if (loading || !user) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
