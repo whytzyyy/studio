@@ -8,17 +8,6 @@ const tiltStyles = `
 }
 .logo-image-wrapper {
   transition: all 0.3s ease-out;
-  animation: scale-in 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-}
-@keyframes scale-in {
-    from {
-        transform: scale(0.5);
-        opacity: 0;
-    }
-    to {
-        transform: scale(1);
-        opacity: 1;
-    }
 }
 `;
 
@@ -30,7 +19,7 @@ export function LogoAnimation() {
         <img
           src="/logo.png"
           alt="Tamra Vault Logo"
-          className="logo-image-wrapper h-48 w-48 md:h-56 md:w-56 object-contain"
+          className="logo-image-wrapper h-48 w-48 md:h-56 md:w-56 object-contain animate-float-up"
         />
         <div className="text-center animate-in fade-in-0 slide-in-from-bottom-10 duration-1000 delay-500">
             <h1 className="mt-4 font-headline text-4xl font-bold tracking-wider text-white md:text-5xl">
