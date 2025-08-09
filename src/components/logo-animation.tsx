@@ -28,7 +28,7 @@ export function LogoAnimation() {
       <style>{tiltStyles}</style>
       <div className="logo-container group relative flex flex-col items-center justify-center">
         <img
-          src="https://i.ibb.co/KzD4g6q/image-1.png"
+          src="https://www.imghippo.com/i/mUol6636wqg.png"
           alt="Tamra Vault Logo"
           width={160}
           height={160}
