@@ -2,6 +2,7 @@ import { BackgroundParticles } from "@/components/background-particles";
 import { CommunityStats } from "@/components/community-stats";
 import { DailyMining } from "@/components/daily-mining";
 import { GamificationFeatures } from "@/components/gamification-features";
+import { Header } from "@/components/header";
 import { LogoAnimation } from "@/components/logo-animation";
 import { NftBadge } from "@/components/nft-badge";
 import { ReferralProgram } from "@/components/referral-program";
@@ -12,8 +13,9 @@ export default function Home() {
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-background font-body text-foreground">
       <BackgroundParticles />
+      <Header />
       <div className="relative z-10 mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
-        <div className="flex flex-col items-center justify-center space-y-8 py-12 text-center">
+        <div className="flex flex-col items-center justify-center space-y-8 py-12 text-center pt-24">
           <LogoAnimation />
           <p className="max-w-2xl text-lg text-muted-foreground">
             Join the Tamra revolution. Mine daily, complete tasks, and refer
