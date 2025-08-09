@@ -72,19 +72,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkForBadges = async (uid: string, profile: UserProfile) => {
     const userDocRef = doc(firestore, 'users', uid);
     const badgesToAward: string[] = [];
+    const currentBadges = profile.badges || [];
 
     // Pioneer badge (should be added at signup, this is a fallback)
-    if (!profile.badges.includes('pioneer')) {
+    if (!currentBadges.includes('pioneer')) {
         badgesToAward.push('pioneer');
     }
     
     // Serial Miner badge
-    if (profile.miningStreak >= 7 && !profile.badges.includes('serial_miner')) {
+    if (profile.miningStreak >= 7 && !currentBadges.includes('serial_miner')) {
         badgesToAward.push('serial_miner');
     }
 
     // Socialite badge
-    if (profile.referrals > 20 && !profile.badges.includes('socialite')) {
+    if (profile.referrals > 20 && !currentBadges.includes('socialite')) {
         badgesToAward.push('socialite');
     }
 
