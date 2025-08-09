@@ -22,9 +22,6 @@ export function Header() {
         {user ? (
           <>
             <UserBalance />
-            <Button asChild variant="ghost">
-              <Link href="/dashboard/profile"><User className="mr-2 h-4 w-4"/> Profile</Link>
-            </Button>
             <Button onClick={handleLogout} variant="outline">
               Logout
             </Button>
