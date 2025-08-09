@@ -11,6 +11,8 @@ import Link from 'next/link';
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { signup } = useAuth();
@@ -18,8 +20,15 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
     try {
       await signup(email, password);
+      // TODO: Add logic to handle referral code
       router.push('/dashboard');
     } catch (err) {
       setError('Failed to sign up. Please try again.');
@@ -54,6 +63,26 @@ export default function SignupPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+             <div className="space-y-2">
+              <Label htmlFor="referral-code">Referral Code (Optional)</Label>
+              <Input
+                id="referral-code"
+                type="text"
+                placeholder="Enter referral code"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value)}
               />
             </div>
             {error && <p className="text-red-500 text-sm">{error}</p>}
