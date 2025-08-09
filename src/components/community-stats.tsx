@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -29,9 +28,9 @@ export function CommunityStats() {
 
   useEffect(() => {
     // Set event date only on client-side to avoid hydration mismatch
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 60);
-    setEventDate(futureDate);
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - 1); // Set to yesterday to end the event
+    setEventDate(pastDate);
 
     // Listen to real-time updates for community stats
     const statsDocRef = doc(firestore, 'community-stats', 'live');
@@ -211,4 +210,3 @@ export function CommunityStats() {
     </Card>
   );
 }
-
