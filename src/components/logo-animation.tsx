@@ -30,9 +30,9 @@ export function LogoAnimation() {
         <img
           src="/logo.png"
           alt="Tamra Vault Logo"
-          width={160}
-          height={160}
-          className="logo-image h-32 w-32 rounded-full md:h-40 md:w-40 object-cover border-4 border-primary/20"
+          width={192}
+          height={192}
+          className="logo-image h-40 w-40 rounded-full md:h-48 md:w-48 object-cover border-4 border-primary/20"
         />
         <div className="text-center animate-in fade-in-0 slide-in-from-bottom-10 duration-1000 delay-500">
             <h1 className="mt-4 font-headline text-4xl font-bold tracking-wider text-white md:text-5xl">
