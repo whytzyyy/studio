@@ -7,10 +7,12 @@ import { Users, Gem, Clock } from 'lucide-react';
 export function CommunityStats() {
   const [members, setMembers] = useState(123456);
   const [tamraClaimed, setTamraClaimed] = useState(7890123);
-  const [eventDate, setEventDate] = useState(new Date());
+  const [eventDate, setEventDate] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     // Set event date only on client-side to avoid hydration mismatch
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 30);
@@ -67,7 +69,7 @@ export function CommunityStats() {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Total Members</p>
-            <p className="text-2xl font-bold">{members.toLocaleString()}</p>
+            <p className="text-2xl font-bold">{isClient ? members.toLocaleString() : members}</p>
           </div>
         </div>
         <div className="flex items-center space-x-4">
@@ -76,7 +78,7 @@ export function CommunityStats() {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Total TAMRA Claimed</p>
-            <p className="text-2xl font-bold">{tamraClaimed.toLocaleString()}</p>
+            <p className="text-2xl font-bold">{isClient ? tamraClaimed.toLocaleString() : tamraClaimed}</p>
           </div>
         </div>
         <div>
