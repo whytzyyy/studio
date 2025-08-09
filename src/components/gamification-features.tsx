@@ -24,7 +24,7 @@ export function GamificationFeatures() {
   const [timeLeft, setTimeLeft] = useState(0);
 
   const { toast } = useToast();
-  const { updateUserBalance } = useAuth();
+  const { userProfile, updateUserBalance } = useAuth();
 
   useEffect(() => {
     const storedLastSpin = localStorage.getItem('tamra-last-spin');
@@ -108,20 +108,11 @@ export function GamificationFeatures() {
         <div className="grid grid-cols-2 gap-4 text-center">
             <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-sm text-muted-foreground">Your Level</p>
-                <p className="text-3xl font-bold text-copper-gradient">5</p>
+                <p className="text-3xl font-bold text-copper-gradient">{userProfile?.level || 1}</p>
             </div>
             <div className="rounded-lg border border-border/50 p-4">
                 <p className="text-sm text-muted-foreground">Mining Streak</p>
-                <p className="text-3xl font-bold flex items-center justify-center gap-1"><Zap className="h-6 w-6 text-yellow-400" /> 12 days</p>
-            </div>
-        </div>
-
-        <div>
-            <h3 className="font-headline text-lg mb-2 flex items-center gap-2"><Award className="text-accent"/> Unlocked Badges</h3>
-            <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="border-accent text-accent py-1 px-3">Pioneer</Badge>
-                <Badge variant="outline" className="border-accent text-accent py-1 px-3">Serial Miner</Badge>
-                <Badge variant="outline" className="border-accent text-accent py-1 px-3">Socialite</Badge>
+                <p className="text-3xl font-bold flex items-center justify-center gap-1"><Zap className="h-6 w-6 text-yellow-400" /> {userProfile?.miningStreak || 0} days</p>
             </div>
         </div>
         

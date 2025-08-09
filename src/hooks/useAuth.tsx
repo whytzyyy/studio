@@ -2,7 +2,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential } from 'firebase/auth';
 import { auth, firestore } from '@/lib/firebase';
-import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion, getDoc } from 'firebase/firestore';
 
 interface UserProfile {
   displayName: string;
@@ -12,6 +12,7 @@ interface UserProfile {
   referrals: number;
   miningStreak: number;
   badges: string[];
+  level: number;
 }
 interface AuthContextType {
   user: User | null;
@@ -42,7 +43,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const unsubProfile = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const profileData = docSnap.data() as UserProfile;
-            // Check for badges on profile load
             checkForBadges(user.uid, profileData);
             setUserProfile(profileData);
           } else {
@@ -55,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               referrals: 0,
               miningStreak: 0,
               badges: ['pioneer'], // Award pioneer badge on creation
+              level: 1,
             };
             setDoc(doc(firestore, 'users', user.uid), initialProfile);
           }
@@ -89,6 +90,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         badgesToAward.push('socialite');
     }
 
+    // Masterpiece badge
+    if (profile.level >= 10 && !currentBadges.includes('masterpiece')) {
+      badgesToAward.push('masterpiece');
+    }
+
     if (badgesToAward.length > 0) {
         await updateDoc(userDocRef, {
             badges: arrayUnion(...badgesToAward)
@@ -114,6 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         tamraBalance: 0,
         referrals: 0,
         miningStreak: 0,
+        level: 1,
         createdAt: new Date().toISOString(),
         badges: ['pioneer']
       });
@@ -159,6 +166,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await updateDoc(userDocRef, {
         tamraBalance: increment(amount)
       });
+      // Recalculate level after balance update
+      const updatedDoc = await getDoc(userDocRef);
+      if(updatedDoc.exists()) {
+        const profile = updatedDoc.data() as UserProfile;
+        const newLevel = Math.min(10, Math.floor(profile.tamraBalance / 1000) + 1);
+        if(newLevel > (profile.level || 1)) {
+          await updateDoc(userDocRef, { level: newLevel });
+        }
+      }
     } else {
       throw new Error("No user logged in to update balance.");
     }

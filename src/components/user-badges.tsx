@@ -2,7 +2,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
-import { Award, Zap, UserPlus } from 'lucide-react';
+import { Award, Zap, UserPlus, ShieldCheck } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -26,6 +26,11 @@ const badgeInfo = {
     description: 'Awarded for successfully referring over 20 new users.',
     icon: <UserPlus className="h-4 w-4" />,
   },
+  masterpiece: {
+    name: 'Masterpiece',
+    description: 'Awarded for reaching the maximum level 10. You are a true master!',
+    icon: <ShieldCheck className="h-4 w-4" />,
+  }
 };
 
 export function UserBadges() {
