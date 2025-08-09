@@ -13,6 +13,7 @@ import { SocialTasks } from "@/components/social-tasks";
 import { Separator } from "@/components/ui/separator";
 import { UserBalance } from '@/components/user-balance';
 import { UserBadges } from '@/components/user-badges';
+import { BadgeGuide } from '@/components/badge-guide';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -66,6 +67,10 @@ export default function DashboardPage() {
         <Separator className="my-12 bg-primary/10" />
 
         <GamificationFeatures />
+
+        <Separator className="my-12 bg-primary/10" />
+        
+        <BadgeGuide />
         
       </div>
     </main>
