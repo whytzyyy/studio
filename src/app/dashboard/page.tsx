@@ -1,6 +1,7 @@
 'use client';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { BackgroundParticles } from "@/components/background-particles";
 import { CommunityStats } from "@/components/community-stats";
 import { DailyMining } from "@/components/daily-mining";
@@ -16,12 +17,17 @@ export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/');
+    }
+  }, [loading, user, router]);
+
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
   if (!user) {
-    router.push('/');
     return null;
   }
 
