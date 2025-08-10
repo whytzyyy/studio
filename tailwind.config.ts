@@ -88,8 +88,8 @@ export default {
           '50%': { transform: 'translateY(-20px)' },
         },
         'pulse-glow': {
-            '0%, 100%': { opacity: '0.7', transform: 'translate(-50%, -50%) scale(1)' },
-            '50%': { opacity: '1', transform: 'translate(-50%, -50%) scale(1.1)' },
+            '0%, 100%': { opacity: '0.7', transform: 'scale(1)' },
+            '50%': { opacity: '1', transform: 'scale(1.1)' },
         }
       },
       animation: {
