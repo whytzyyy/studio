@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <Sidebar>
           <div className="flex flex-col h-full bg-background/95 backdrop-blur-sm">
             <SidebarHeader className="p-4">
-              <LogoAnimation />
+              <LogoAnimation animated={false} />
             </SidebarHeader>
             <DashboardNav />
           </div>
