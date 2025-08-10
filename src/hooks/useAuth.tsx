@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential, updateEmail } from 'firebase/auth';
+import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential } from 'firebase/auth';
 import { auth, firestore } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
 
@@ -27,7 +27,6 @@ interface AuthContextType {
   updateUserProfile: (profile: { displayName?: string; }) => Promise<any>;
   reauthenticate: (password: string) => Promise<any>;
   updateUserPassword: (newPass: string) => Promise<any>;
-  updateUserEmail: (newEmail: string) => Promise<void>;
   updateUserBalance: (amount: number) => Promise<void>;
   updateUserStreak: (streak: number) => Promise<void>;
   completeSocialTask: (taskId: string, reward: number) => Promise<void>;
@@ -173,17 +172,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return Promise.reject('No user to update password for.');
   };
 
-  const updateUserEmail = async (newEmail: string) => {
-    const user = auth.currentUser;
-    if (user) {
-        await updateEmail(user, newEmail);
-        const userDocRef = doc(firestore, 'users', user.uid);
-        await updateDoc(userDocRef, { email: newEmail });
-    } else {
-        return Promise.reject(new Error("No user to update email for."));
-    }
-  };
-
   const updateUserBalance = async (amount: number) => {
     const user = auth.currentUser;
     if (user) {
@@ -263,7 +251,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     updateUserProfile, 
     reauthenticate, 
     updateUserPassword,
-    updateUserEmail,
     updateUserBalance, 
     updateUserStreak,
     completeSocialTask,
