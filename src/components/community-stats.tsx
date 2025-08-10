@@ -28,9 +28,11 @@ export function CommunityStats() {
 
   useEffect(() => {
     // Set event date only on client-side to avoid hydration mismatch
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 60); 
-    setEventDate(futureDate);
+    setEventDate(() => {
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + 60); 
+        return futureDate;
+    });
 
     // Listen to real-time updates for community stats
     const statsDocRef = doc(firestore, 'community-stats', 'live');
