@@ -22,13 +22,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize App Check
-if (typeof window !== 'undefined') {
-  initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider('6Ld-pAYqAAAAANb2xV5-B47-s0d3B6vF_e3jG-kP'),
-    isTokenAutoRefreshEnabled: true
-  });
-}
+// Initialize App Check - DISABLED FOR DEBUGGING
+// if (typeof window !== 'undefined') {
+//   initializeAppCheck(app, {
+//     provider: new ReCaptchaV3Provider('6Ld-pAYqAAAAANb2xV5-B47-s0d3B6vF_e3jG-kP'),
+//     isTokenAutoRefreshEnabled: true
+//   });
+// }
 
 
 const auth = getAuth(app);
