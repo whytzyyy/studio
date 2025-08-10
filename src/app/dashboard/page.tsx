@@ -38,11 +38,11 @@ export default function DashboardPage() {
           <UserBadges />
         </div>
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          <div className="md:col-span-2">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2">
             <DailyMining />
           </div>
-          <div className="md:col-span-1">
+          <div className="lg:col-span-1">
             <CommunityStats />
           </div>
         </div>

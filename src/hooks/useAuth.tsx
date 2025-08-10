@@ -5,6 +5,12 @@ import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEma
 import { auth, firestore } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
 
+interface ReferredUser {
+  uid: string;
+  displayName: string;
+  joinedAt: string;
+}
+
 interface UserProfile {
   displayName: string;
   email: string;
@@ -14,8 +20,9 @@ interface UserProfile {
   miningStreak: number;
   badges: string[];
   level: number;
-  completedTasks: string[]; // Changed to string to match Firestore document ID
+  completedTasks: string[]; 
   solanaAddress?: string;
+  referredUsers?: ReferredUser[];
 }
 interface AuthContextType {
   user: User | null;
@@ -104,10 +111,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const newUser = userCredential.user;
     
     if (newUser) {
-      // Create document for the new user
+      const newUserDisplayName = newUser.email?.split('@')[0] || 'New User';
       const userDocRef = doc(firestore, 'users', newUser.uid);
       await setDoc(userDocRef, {
-        displayName: newUser.email?.split('@')[0] || 'New User',
+        displayName: newUserDisplayName,
         email: newUser.email,
         photoURL: '/logo.png',
         tamraBalance: 0,
@@ -116,7 +123,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         level: 1,
         createdAt: new Date().toISOString(),
         badges: ['pioneer'],
-        completedTasks: []
+        completedTasks: [],
+        referredUsers: []
       });
 
       // Handle referral if code is provided
@@ -124,9 +132,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const referrerDocRef = doc(firestore, 'users', referralCode);
         const referrerDoc = await getDoc(referrerDocRef);
         if (referrerDoc.exists()) {
+          const newReferredUser: ReferredUser = {
+            uid: newUser.uid,
+            displayName: newUserDisplayName,
+            joinedAt: new Date().toISOString(),
+          };
           await updateDoc(referrerDocRef, {
             tamraBalance: increment(100),
-            referrals: increment(1)
+            referrals: increment(1),
+            referredUsers: arrayUnion(newReferredUser)
           });
         }
       }
@@ -144,7 +158,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if(auth.currentUser){
           await updateProfile(auth.currentUser, profile);
           const userDocRef = doc(firestore, 'users', auth.currentUser.uid);
-          // Only update defined fields in Firestore
           const firestoreUpdate: { [key: string]: any } = {};
           if (profile.displayName !== undefined) firestoreUpdate.displayName = profile.displayName;
           if (Object.keys(firestoreUpdate).length > 0) {
@@ -208,7 +221,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) {
       const userDocRef = doc(firestore, 'users', user.uid);
       
-      // Use a transaction to ensure atomicity
       await runTransaction(firestore, async (transaction) => {
         const userDoc = await transaction.get(userDocRef);
         if (!userDoc.exists()) {

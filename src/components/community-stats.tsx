@@ -2,13 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Gem, Clock } from 'lucide-react';
+import { Users, Gem, Clock, Trophy } from 'lucide-react';
 import { firestore } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, orderBy, limit } from 'firebase/firestore';
 import { Button } from './ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from './ui/separator';
+
+interface Referrer {
+  id: string;
+  rank: number;
+  name: string;
+  referrals: number;
+  avatar: string;
+}
 
 export function CommunityStats() {
   const [members, setMembers] = useState(0);
@@ -16,8 +27,8 @@ export function CommunityStats() {
   const [eventDate, setEventDate] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isEventOver, setIsEventOver] = useState(false);
+  const [topReferrers, setTopReferrers] = useState<Referrer[]>([]);
   
-  // New state for eligibility flow
   const [eligibilityStatus, setEligibilityStatus] = useState<'idle' | 'eligible' | 'ineligible' | 'submitted'>('idle');
   const [solanaAddress, setSolanaAddress] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,20 +45,39 @@ export function CommunityStats() {
         return futureDate;
     });
 
-    // Listen to real-time updates for community stats
     const statsDocRef = doc(firestore, 'community-stats', 'live');
-    const unsubscribe = onSnapshot(statsDocRef, (docSnap) => {
+    const unsubscribeStats = onSnapshot(statsDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setMembers(data.totalMembers || 0);
         setTamraClaimed(data.totalTamraClaimed || 0);
       } else {
-        // You might want to initialize this document in your backend
         console.log("No community stats document!");
       }
     });
 
-    return () => unsubscribe();
+    const usersRef = collection(firestore, 'users');
+    const q = query(usersRef, orderBy('referrals', 'desc'), limit(5));
+
+    const unsubscribeReferrers = onSnapshot(q, (querySnapshot) => {
+      const referrers: Referrer[] = [];
+      querySnapshot.forEach((doc, index) => {
+        const data = doc.data();
+        referrers.push({
+          id: doc.id,
+          rank: index + 1,
+          name: data.displayName || 'Anonymous',
+          referrals: data.referrals || 0,
+          avatar: data.photoURL || `/logo.png`,
+        });
+      });
+      setTopReferrers(referrers);
+    });
+
+    return () => {
+        unsubscribeStats();
+        unsubscribeReferrers();
+    };
   }, []);
 
   useEffect(() => {
@@ -83,8 +113,7 @@ export function CommunityStats() {
         });
         return;
     }
-
-    // Use default values of 0 if properties don't exist
+    
     const balance = userProfile.tamraBalance || 0;
     const referrals = userProfile.referrals || 0;
 
@@ -171,7 +200,7 @@ export function CommunityStats() {
   return (
     <Card className="h-full border-primary/20 bg-card/50 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="font-headline text-2xl">Community Stats</CardTitle>
+        <CardTitle className="font-headline text-2xl">Community Pulse</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center space-x-4">
@@ -219,6 +248,36 @@ export function CommunityStats() {
               </div>
             </div>
           )}
+        </div>
+        <Separator />
+        <div>
+          <h3 className="font-headline text-lg mb-2 flex items-center gap-2"><Trophy className="text-amber-400" /> Top Referrers</h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Rank</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead className="text-right">Referrals</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {topReferrers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.rank}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.avatar} alt={user.name} />
+                            <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
+                        </Avatar>
+                        <span className="truncate">{user.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right font-mono">{user.referrals}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
     </Card>

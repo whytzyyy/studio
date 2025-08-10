@@ -1,54 +1,20 @@
 "use client";
 
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Copy, UserPlus, Trophy } from 'lucide-react';
+import { Copy, UserPlus, Users } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { firestore } from '@/lib/firebase';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
-
-
-interface Referrer {
-  id: string;
-  rank: number;
-  name: string;
-  referrals: number;
-  avatar: string;
-}
+import { Separator } from './ui/separator';
 
 export function ReferralProgram() {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const [topReferrers, setTopReferrers] = useState<Referrer[]>([]);
+  const { user, userProfile } = useAuth();
 
   const referralLink = user ? `${window.location.origin}/signup?ref=${user.uid}` : "";
-
-  useEffect(() => {
-    const usersRef = collection(firestore, 'users');
-    const q = query(usersRef, orderBy('referrals', 'desc'), limit(3));
-
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const referrers: Referrer[] = [];
-      querySnapshot.forEach((doc, index) => {
-        const data = doc.data();
-        referrers.push({
-          id: doc.id,
-          rank: index + 1,
-          name: data.displayName || 'Anonymous',
-          referrals: data.referrals || 0,
-          avatar: data.photoURL || `/logo.png`,
-        });
-      });
-      setTopReferrers(referrers);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const referredUsers = userProfile?.referredUsers || [];
 
   const handleCopy = () => {
     if (!referralLink) {
@@ -84,34 +50,36 @@ export function ReferralProgram() {
           </div>
         </div>
         
+        <Separator />
+
         <div>
-          <h3 className="font-headline text-lg mb-2 flex items-center gap-2"><Trophy className="text-amber-400" /> Top Referrers</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Rank</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead className="text-right">Referrals</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {topReferrers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.rank}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar} alt={user.name} />
-                            <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
-                        </Avatar>
-                        <span>{user.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right font-mono">{user.referrals}</TableCell>
+          <h3 className="font-headline text-lg mb-2 flex items-center gap-2"><Users className="text-accent" /> Your Referred Users ({referredUsers.length})</h3>
+          <div className="rounded-lg border border-border/50">
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead>Username</TableHead>
+                    <TableHead className="text-right">Date Joined</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                {referredUsers.length > 0 ? (
+                    referredUsers.map((u) => (
+                    <TableRow key={u.uid}>
+                        <TableCell className="font-medium">{u.displayName}</TableCell>
+                        <TableCell className="text-right font-mono text-sm">{new Date(u.joinedAt).toLocaleDateString()}</TableCell>
+                    </TableRow>
+                    ))
+                ) : (
+                    <TableRow>
+                    <TableCell colSpan={2} className="text-center text-muted-foreground">
+                        You haven't referred anyone yet. Share your link!
+                    </TableCell>
+                    </TableRow>
+                )}
+                </TableBody>
+            </Table>
+          </div>
         </div>
       </CardContent>
     </Card>
