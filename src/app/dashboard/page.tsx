@@ -6,6 +6,7 @@ import { CommunityStats } from "@/components/community-stats";
 import { DailyMining } from "@/components/daily-mining";
 import { UserBalance } from '@/components/user-balance';
 import { UserBadges } from '@/components/user-badges';
+import { LogoAnimation } from '@/components/logo-animation';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
@@ -28,6 +29,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
         <div className="flex flex-col items-center justify-center space-y-4 py-4 text-center">
+          <LogoAnimation />
           <p className="max-w-2xl text-lg text-muted-foreground">
             Welcome back, {user.displayName || user.email}! Mine daily, complete tasks, and refer
             friends to grow your vault.
