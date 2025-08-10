@@ -263,7 +263,7 @@ export function CommunityStats() {
             <TableBody>
               {topReferrers.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.rank}</TableCell>
+                  <TableCell className="font-medium">{user.rank || '-'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
@@ -273,7 +273,7 @@ export function CommunityStats() {
                         <span className="truncate">{user.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right font-mono">{user.referrals || 0}</TableCell>
+                  <TableCell className="text-right font-mono">{Number.isFinite(user.referrals) ? user.referrals : 0}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
