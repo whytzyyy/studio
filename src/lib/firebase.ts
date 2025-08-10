@@ -29,7 +29,7 @@ if (typeof window !== 'undefined') {
   // You can find this key in the reCAPTCHA v3 Admin Console.
   // Be sure to replace the key below with your actual site key.
   initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider('6Ld-pAYqAAAAANb2xV5-B47-s0d3B6vF_e3jG-kP'),
+    provider: new ReCaptchaV3Provider('6LemvaArAAAAAIDSl6_IU2g0lUokvUBC6K8Kwe2B'),
 
     // Optional argument. If true, the SDK automatically refreshes App Check
     // tokens as needed.
