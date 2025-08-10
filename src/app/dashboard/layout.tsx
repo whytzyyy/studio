@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <div className="relative min-h-screen w-full overflow-x-hidden bg-background font-body text-foreground">
         <BackgroundParticles />
         <Sidebar>
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col h-full bg-background/95 backdrop-blur-sm">
             <SidebarHeader className="p-4">
               <LogoAnimation />
             </SidebarHeader>
