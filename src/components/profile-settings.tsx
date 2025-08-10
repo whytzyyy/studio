@@ -17,7 +17,6 @@ export function ProfileSettings() {
   const { toast } = useToast();
 
   const [displayName, setDisplayName] = useState('');
-  const [photoURL, setPhotoURL] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,7 +29,6 @@ export function ProfileSettings() {
   useEffect(() => {
     if (userProfile) {
       setDisplayName(userProfile.displayName || '');
-      setPhotoURL(userProfile.photoURL || '');
       setNewEmail(userProfile.email || '');
     }
   }, [userProfile]);
@@ -39,10 +37,10 @@ export function ProfileSettings() {
     e.preventDefault();
     setIsSavingProfile(true);
     try {
-      await updateUserProfile({ displayName, photoURL });
+      await updateUserProfile({ displayName });
       toast({
         title: "Profile Updated",
-        description: "Your profile information has been successfully updated.",
+        description: "Your display name has been successfully updated.",
       });
     } catch (error: any) {
       toast({
@@ -132,7 +130,7 @@ export function ProfileSettings() {
         <CardContent className="space-y-6">
           <div className="flex flex-col items-center gap-4">
             <Avatar className="h-24 w-24 border-2 border-accent">
-              <AvatarImage src={photoURL} data-ai-hint="person avatar" alt={displayName} />
+              <AvatarImage src="/logo.png" alt={displayName} />
               <AvatarFallback>{displayName?.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="text-center">
@@ -150,15 +148,6 @@ export function ProfileSettings() {
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Your display name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="photoURL">Photo URL</Label>
-                <Input
-                  id="photoURL"
-                  value={photoURL}
-                  onChange={(e) => setPhotoURL(e.target.value)}
-                  placeholder="https://example.com/your-photo.png"
                 />
               </div>
             <Button type="submit" disabled={isSavingProfile}>

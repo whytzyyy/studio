@@ -41,7 +41,7 @@ export function ReferralProgram() {
           rank: index + 1,
           name: data.displayName || 'Anonymous',
           referrals: data.referrals || 0,
-          avatar: data.photoURL || `https://placehold.co/40x40.png`,
+          avatar: data.photoURL || `/logo.png`,
         });
       });
       setTopReferrers(referrers);
@@ -101,7 +101,7 @@ export function ReferralProgram() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar} data-ai-hint="person avatar" alt={user.name} />
+                            <AvatarImage src={user.avatar} alt={user.name} />
                             <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
                         </Avatar>
                         <span>{user.name}</span>

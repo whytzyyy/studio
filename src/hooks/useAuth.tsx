@@ -24,7 +24,7 @@ interface AuthContextType {
   login: (email: string, pass: string) => Promise<any>;
   signup: (email: string, pass: string, referralCode?: string) => Promise<any>;
   logout: () => Promise<any>;
-  updateUserProfile: (profile: { displayName?: string; photoURL?: string; }) => Promise<any>;
+  updateUserProfile: (profile: { displayName?: string; }) => Promise<any>;
   reauthenticate: (password: string) => Promise<any>;
   updateUserPassword: (newPass: string) => Promise<any>;
   updateUserEmail: (newEmail: string) => Promise<void>;
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const initialProfile: UserProfile = {
               displayName: user.displayName || userEmail.split('@')[0],
               email: user.email || '',
-              photoURL: user.photoURL || '',
+              photoURL: '/logo.png',
               tamraBalance: 0,
               referrals: 0,
               miningStreak: 0,
@@ -125,7 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await setDoc(userDocRef, {
         displayName: newUser.email?.split('@')[0] || 'New User',
         email: newUser.email,
-        photoURL: '',
+        photoURL: '/logo.png',
         tamraBalance: 0,
         referrals: 0,
         miningStreak: 0,
@@ -155,14 +155,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return signOut(auth);
   };
   
-  const updateUserProfile = async (profile: { displayName?: string; photoURL?: string; }) => {
+  const updateUserProfile = async (profile: { displayName?: string; }) => {
       if(auth.currentUser){
           await updateProfile(auth.currentUser, profile);
           const userDocRef = doc(firestore, 'users', auth.currentUser.uid);
           // Only update defined fields in Firestore
           const firestoreUpdate: { [key: string]: any } = {};
           if (profile.displayName !== undefined) firestoreUpdate.displayName = profile.displayName;
-          if (profile.photoURL !== undefined) firestoreUpdate.photoURL = profile.photoURL;
           if (Object.keys(firestoreUpdate).length > 0) {
               await updateDoc(userDocRef, firestoreUpdate);
           }
