@@ -58,15 +58,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             // Recalculate level and check for badges every time profile data changes
             const newLevel = Math.min(10, Math.floor((profileData.tamraBalance || 0) / 1000) + 1);
+            
+            const profileUpdates: { [key: string]: any } = {};
+
             if (newLevel > (profileData.level || 1)) {
-              await updateDoc(userDocRef, { level: newLevel });
-              // The snapshot will re-fire with the new level, triggering the final badge check
-            } else {
-               // If level hasn't changed, check for other badges
-              await checkForBadges(user.uid, profileData);
+              profileUpdates.level = newLevel;
             }
 
-            setUserProfile(profileData);
+            const badgesToAward: string[] = [];
+            const currentBadges = profileData.badges || [];
+
+            if (!currentBadges.includes('pioneer')) {
+                badgesToAward.push('pioneer');
+            }
+            if ((profileData.miningStreak || 0) >= 7 && !currentBadges.includes('serial_miner')) {
+                badgesToAward.push('serial_miner');
+            }
+            if ((profileData.referrals || 0) > 20 && !currentBadges.includes('socialite')) {
+                badgesToAward.push('socialite');
+            }
+            if ((profileData.level || newLevel) >= 10 && !currentBadges.includes('masterpiece')) {
+              badgesToAward.push('masterpiece');
+            }
+
+            if (badgesToAward.length > 0) {
+              profileUpdates.badges = arrayUnion(...badgesToAward);
+            }
+
+            if (Object.keys(profileUpdates).length > 0) {
+              await updateDoc(userDocRef, profileUpdates);
+            } else {
+              setUserProfile(profileData);
+            }
+
           }
           setLoading(false); 
         });
@@ -80,38 +104,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
   
-  const checkForBadges = async (uid: string, profile: UserProfile) => {
-    const userDocRef = doc(firestore, 'users', uid);
-    const badgesToAward: string[] = [];
-    const currentBadges = profile.badges || [];
-
-    // Pioneer badge (should be added at signup, this is a fallback)
-    if (!currentBadges.includes('pioneer')) {
-        badgesToAward.push('pioneer');
-    }
-    
-    // Serial Miner badge
-    if (profile.miningStreak >= 7 && !currentBadges.includes('serial_miner')) {
-        badgesToAward.push('serial_miner');
-    }
-
-    // Socialite badge
-    if (profile.referrals > 20 && !currentBadges.includes('socialite')) {
-        badgesToAward.push('socialite');
-    }
-
-    // Masterpiece badge
-    if (profile.level >= 10 && !currentBadges.includes('masterpiece')) {
-      badgesToAward.push('masterpiece');
-    }
-
-    if (badgesToAward.length > 0) {
-        // Use arrayUnion to avoid adding duplicate badges
-        await updateDoc(userDocRef, {
-            badges: arrayUnion(...badgesToAward)
-        });
-    }
-  }
 
   const login = async (email: string, pass: string): Promise<UserCredential> => {
     return signInWithEmailAndPassword(auth, email, pass);
@@ -137,6 +129,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         completedTasks: [],
         referredUsers: []
       });
+
+      // Increment global member count
+      const statsDocRef = doc(firestore, 'community-stats', 'live');
+      await setDoc(statsDocRef, { totalMembers: increment(1) }, { merge: true });
+
 
       // Handle referral if code is provided
       if (referralCode) {
@@ -198,14 +195,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUserBalance = async (amount: number) => {
     const user = auth.currentUser;
-    if (user) {
+    if (user && amount > 0) {
       const userDocRef = doc(firestore, 'users', user.uid);
-      await updateDoc(userDocRef, {
-        tamraBalance: increment(amount)
+      const statsDocRef = doc(firestore, 'community-stats', 'live');
+      
+      await runTransaction(firestore, async (transaction) => {
+        // Increment user balance
+        transaction.update(userDocRef, { tamraBalance: increment(amount) });
+        // Increment global claimed amount
+        transaction.set(statsDocRef, { totalTamraClaimed: increment(amount) }, { merge: true });
       });
-      // Level recalculation is now handled by the onSnapshot listener,
-      // so we don't need to explicitly call it here.
-    } else {
+
+    } else if (!user) {
       throw new Error("No user logged in to update balance.");
     }
   };
@@ -224,6 +225,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const user = auth.currentUser;
     if (user) {
       const userDocRef = doc(firestore, 'users', user.uid);
+      const statsDocRef = doc(firestore, 'community-stats', 'live');
       
       await runTransaction(firestore, async (transaction) => {
         const userDoc = await transaction.get(userDocRef);
@@ -236,10 +238,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           throw new Error("You have already completed this task.");
         }
 
+        // Update user's doc
         transaction.update(userDocRef, {
           tamraBalance: increment(reward),
           completedTasks: arrayUnion(taskId)
         });
+
+        // Update global stats
+        transaction.set(statsDocRef, { totalTamraClaimed: increment(reward) }, { merge: true });
       });
 
     } else {
@@ -283,3 +289,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+    
