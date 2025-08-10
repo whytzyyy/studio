@@ -53,15 +53,8 @@ export default function SignupPage() {
       await signup(email, password, referralCode || undefined);
       router.push('/dashboard');
     } catch (err: any) {
-        if (err.code === 'auth/email-already-in-use') {
-            setError('This email is already registered. Please log in.');
-        } else if (err.code === 'auth/weak-password') {
-            setError('Password is too weak. Please use at least 6 characters.');
-        }
-        else {
-            console.error('Signup Error:', err);
-            setError('Failed to sign up. Please try again.');
-        }
+        console.error('Signup Error:', err);
+        setError('Failed to sign up. The email might already be in use.');
     }
   };
 
