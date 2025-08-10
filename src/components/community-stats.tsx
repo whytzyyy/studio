@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Gem, Clock, Trophy } from 'lucide-react';
+import { Users, Gem, Clock, Trophy, Star } from 'lucide-react';
 import { firestore } from '@/lib/firebase';
-import { doc, onSnapshot, collection, query, orderBy, limit } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { Button } from './ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from './ui/input';
@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from './ui/separator';
+import { cn } from '@/lib/utils';
 
 interface Referrer {
   id: string;
@@ -28,12 +29,13 @@ export function CommunityStats() {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [isEventOver, setIsEventOver] = useState(false);
   const [topReferrers, setTopReferrers] = useState<Referrer[]>([]);
+  const [userRank, setUserRank] = useState<number | null>(null);
   
   const [eligibilityStatus, setEligibilityStatus] = useState<'idle' | 'eligible' | 'ineligible' | 'submitted'>('idle');
   const [solanaAddress, setSolanaAddress] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { userProfile, submitSolanaAddress } = useAuth();
+  const { user, userProfile, submitSolanaAddress } = useAuth();
   const { toast } = useToast();
 
 
@@ -74,11 +76,24 @@ export function CommunityStats() {
       setTopReferrers(referrers);
     });
 
+    // Fetch all users to calculate rank
+    if (user && userProfile) {
+      const allUsersQuery = query(collection(firestore, 'users'), orderBy('referrals', 'desc'));
+      getDocs(allUsersQuery).then(snapshot => {
+        const sortedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const currentUserIndex = sortedUsers.findIndex(u => u.id === user.uid);
+        if (currentUserIndex !== -1) {
+          setUserRank(currentUserIndex + 1);
+        }
+      });
+    }
+
+
     return () => {
         unsubscribeStats();
         unsubscribeReferrers();
     };
-  }, []);
+  }, [user, userProfile]);
 
   useEffect(() => {
     if(!eventDate) return;
@@ -197,6 +212,8 @@ export function CommunityStats() {
     }
   }
 
+  const isCurrentUserInTop = topReferrers.some(r => r.id === user?.uid);
+
   return (
     <Card className="h-full border-primary/20 bg-card/50 backdrop-blur-sm">
       <CardHeader>
@@ -251,33 +268,49 @@ export function CommunityStats() {
         </div>
         <Separator />
         <div>
-          <h3 className="font-headline text-lg mb-2 flex items-center gap-2"><Trophy className="text-amber-400" /> Top Referrers</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Rank</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead className="text-right">Referrals</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {topReferrers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.rank || '-'}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar} alt={user.name} />
-                            <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
-                        </Avatar>
-                        <span className="truncate">{user.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right font-mono">{Number.isFinite(user.referrals) ? user.referrals : 0}</TableCell>
+          <h3 className="font-headline text-lg mb-4 flex items-center gap-2"><Trophy className="text-amber-400" /> Top Referrers</h3>
+          <div className="rounded-md border border-border/50">
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead>Rank</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead className="text-right">Referrals</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                {topReferrers.map((refUser) => (
+                    <TableRow key={refUser.id} className={cn(refUser.id === user?.uid && "bg-primary/20")}>
+                    <TableCell className="font-medium">{refUser.rank || '-'}</TableCell>
+                    <TableCell>
+                        <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                                <AvatarImage src={refUser.avatar} alt={refUser.name} />
+                                <AvatarFallback>{refUser.name.substring(0, 2)}</AvatarFallback>
+                            </Avatar>
+                            <span className="truncate">{refUser.name}</span>
+                        </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">{Number.isFinite(refUser.referrals) ? refUser.referrals : 0}</TableCell>
+                    </TableRow>
+                ))}
+                </TableBody>
+            </Table>
+          </div>
+          {userRank !== null && !isCurrentUserInTop && userProfile && (
+             <div className="mt-4 rounded-md border border-accent/50 bg-primary/20 p-3">
+                <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 font-semibold">
+                        <Star className="h-4 w-4 text-accent" />
+                        <span>Your Rank</span>
+                    </div>
+                    <div className="text-right">
+                        <p className="font-bold text-base text-accent">#{userRank}</p>
+                        <p className="text-xs font-mono text-muted-foreground">{userProfile.referrals || 0} Referrals</p>
+                    </div>
+                </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
