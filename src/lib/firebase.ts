@@ -1,3 +1,4 @@
+"use client";
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
@@ -22,13 +23,19 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize App Check - DISABLED FOR DEBUGGING
-// if (typeof window !== 'undefined') {
-//   initializeAppCheck(app, {
-//     provider: new ReCaptchaV3Provider('6Ld-pAYqAAAAANb2xV5-B47-s0d3B6vF_e3jG-kP'),
-//     isTokenAutoRefreshEnabled: true
-//   });
-// }
+// Initialize App Check
+if (typeof window !== 'undefined') {
+  // Pass your reCAPTCHA v3 site key (public key) to activate.
+  // You can find this key in the reCAPTCHA v3 Admin Console.
+  // Be sure to replace the key below with your actual site key.
+  initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider('6Ld-pAYqAAAAANb2xV5-B47-s0d3B6vF_e3jG-kP'),
+
+    // Optional argument. If true, the SDK automatically refreshes App Check
+    // tokens as needed.
+    isTokenAutoRefreshEnabled: true
+  });
+}
 
 
 const auth = getAuth(app);
