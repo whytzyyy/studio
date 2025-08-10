@@ -113,7 +113,7 @@ export function ProfileSettings() {
                  </h2>
                  <p className="text-muted-foreground">{user?.email}</p>
             </div>
-            <UserBadges />
+            <div key={userProfile?.badges?.join('-')}><UserBadges /></div>
           </div>
           <Separator />
           <form onSubmit={handleProfileUpdate} className="space-y-4">
