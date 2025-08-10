@@ -273,7 +273,7 @@ export function CommunityStats() {
                         <span className="truncate">{user.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-right font-mono">{user.referrals}</TableCell>
+                  <TableCell className="text-right font-mono">{user.referrals || 0}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
