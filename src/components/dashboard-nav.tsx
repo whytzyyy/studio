@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LayoutDashboard, Gift, Users, Trophy, BookOpen, LifeBuoy } from 'lucide-react';
+import { LayoutDashboard, Gift, Users, Trophy, BookOpen, LifeBuoy, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Separator } from './ui/separator';
 
 const navItems = [
   {
@@ -32,20 +33,44 @@ const navItems = [
     label: 'Badge Guide',
     icon: BookOpen,
   },
-  {
-    href: '/dashboard/help',
-    label: 'Help & Feedback',
-    icon: LifeBuoy,
-  },
 ];
+
+const helpAndProfileItems = [
+    {
+        href: '/dashboard/profile',
+        label: 'Profile',
+        icon: UserCircle,
+    },
+    {
+        href: '/dashboard/help',
+        label: 'Help & Feedback',
+        icon: LifeBuoy,
+    },
+]
 
 export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex-1 overflow-auto p-4">
+    <nav className="flex-1 overflow-auto p-4 flex flex-col justify-between">
       <SidebarMenu>
         {navItems.map((item) => (
+          <SidebarMenuItem key={item.href}>
+            <Link href={item.href}>
+              <SidebarMenuButton
+                isActive={pathname === item.href}
+                className="w-full justify-start"
+              >
+                <item.icon className="h-5 w-5 mr-3" />
+                <span className="truncate">{item.label}</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+        ))}
+      </SidebarMenu>
+       <SidebarMenu>
+        <Separator className="my-2" />
+         {helpAndProfileItems.map((item) => (
           <SidebarMenuItem key={item.href}>
             <Link href={item.href}>
               <SidebarMenuButton

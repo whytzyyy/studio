@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential } from 'firebase/auth';
+import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential, updateEmail } from 'firebase/auth';
 import { auth, firestore } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
 
@@ -27,6 +27,7 @@ interface AuthContextType {
   updateUserProfile: (profile: { displayName?: string; photoURL?: string; }) => Promise<any>;
   reauthenticate: (password: string) => Promise<any>;
   updateUserPassword: (newPass: string) => Promise<any>;
+  updateUserEmail: (newEmail: string) => Promise<void>;
   updateUserBalance: (amount: number) => Promise<void>;
   updateUserStreak: (streak: number) => Promise<void>;
   completeSocialTask: (taskId: string, reward: number) => Promise<void>;
@@ -154,13 +155,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return signOut(auth);
   };
   
-  const updateUserProfile = (profile: { displayName?: string; photoURL?: string; }) => {
+  const updateUserProfile = async (profile: { displayName?: string; photoURL?: string; }) => {
       if(auth.currentUser){
+          await updateProfile(auth.currentUser, profile);
           const userDocRef = doc(firestore, 'users', auth.currentUser.uid);
-          updateDoc(userDocRef, profile); // Update Firestore as well
-          return updateProfile(auth.currentUser, profile);
+          // Only update defined fields in Firestore
+          const firestoreUpdate: { [key: string]: any } = {};
+          if (profile.displayName !== undefined) firestoreUpdate.displayName = profile.displayName;
+          if (profile.photoURL !== undefined) firestoreUpdate.photoURL = profile.photoURL;
+          if (Object.keys(firestoreUpdate).length > 0) {
+              await updateDoc(userDocRef, firestoreUpdate);
+          }
+      } else {
+        return Promise.reject(new Error("No user logged in"));
       }
-      return Promise.reject(new Error("No user logged in"));
   }
 
   const reauthenticate = (password: string) => {
@@ -178,6 +186,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return updatePassword(user, newPass);
     }
     return Promise.reject('No user to update password for.');
+  };
+
+  const updateUserEmail = async (newEmail: string) => {
+    const user = auth.currentUser;
+    if (user) {
+        await updateEmail(user, newEmail);
+        const userDocRef = doc(firestore, 'users', user.uid);
+        await updateDoc(userDocRef, { email: newEmail });
+    } else {
+        return Promise.reject(new Error("No user to update email for."));
+    }
   };
 
   const updateUserBalance = async (amount: number) => {
@@ -258,7 +277,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     logout, 
     updateUserProfile, 
     reauthenticate, 
-    updateUserPassword, 
+    updateUserPassword,
+    updateUserEmail,
     updateUserBalance, 
     updateUserStreak,
     completeSocialTask,
