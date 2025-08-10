@@ -52,10 +52,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         setUser(user);
         const userDocRef = doc(firestore, 'users', user.uid);
-        const unsubProfile = onSnapshot(userDocRef, (docSnap) => {
+        const unsubProfile = onSnapshot(userDocRef, async (docSnap) => {
           if (docSnap.exists()) {
             const profileData = docSnap.data() as UserProfile;
-            checkForBadges(user.uid, profileData);
+            
+            // Recalculate level and check for badges every time profile data changes
+            const newLevel = Math.min(10, Math.floor((profileData.tamraBalance || 0) / 1000) + 1);
+            if (newLevel > (profileData.level || 1)) {
+              await updateDoc(userDocRef, { level: newLevel });
+              // The snapshot will re-fire with the new level, triggering the final badge check
+            } else {
+               // If level hasn't changed, check for other badges
+              await checkForBadges(user.uid, profileData);
+            }
+
             setUserProfile(profileData);
           }
           setLoading(false); 
@@ -96,6 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     if (badgesToAward.length > 0) {
+        // Use arrayUnion to avoid adding duplicate badges
         await updateDoc(userDocRef, {
             badges: arrayUnion(...badgesToAward)
         });
@@ -192,15 +203,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await updateDoc(userDocRef, {
         tamraBalance: increment(amount)
       });
-      // Recalculate level after balance update
-      const updatedDoc = await getDoc(userDocRef);
-      if(updatedDoc.exists()) {
-        const profile = updatedDoc.data() as UserProfile;
-        const newLevel = Math.min(10, Math.floor(profile.tamraBalance / 1000) + 1);
-        if(newLevel > (profile.level || 1)) {
-          await updateDoc(userDocRef, { level: newLevel });
-        }
-      }
+      // Level recalculation is now handled by the onSnapshot listener,
+      // so we don't need to explicitly call it here.
     } else {
       throw new Error("No user logged in to update balance.");
     }
