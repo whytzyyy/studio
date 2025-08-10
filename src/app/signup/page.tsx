@@ -16,6 +16,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
   
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,6 +32,7 @@ export default function SignupPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setIsSuccess(false);
 
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
@@ -39,16 +41,41 @@ export default function SignupPage() {
 
     try {
       await signup(email, password, referralCode || undefined);
-      router.push('/dashboard');
+      setIsSuccess(true);
     } catch (err: any) {
         if (err.code === 'auth/email-already-in-use') {
-            setError('This email is already registered. Please log in.');
+            setError('This email is already registered. Please log in or verify your email.');
         } else {
             console.error(err);
             setError('Failed to sign up. Please try again.');
         }
     }
   };
+  
+    if (isSuccess) {
+        return (
+             <main className="relative min-h-screen w-full overflow-x-hidden bg-background font-body text-foreground">
+                <BackgroundParticles />
+                <div className="relative z-10 flex h-screen items-center justify-center text-white">
+                    <Card className="w-full max-w-sm bg-card/80 backdrop-blur-sm border-primary/20">
+                        <CardHeader className="items-center text-center">
+                            <LogoAnimation />
+                            <CardTitle className="text-2xl text-accent">Registration Successful!</CardTitle>
+                            <CardDescription>
+                                A verification link has been sent to your email address. Please check your inbox and follow the link to activate your account.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button onClick={() => router.push('/')} className="w-full bg-copper-gradient text-primary-foreground hover:opacity-90">
+                                Back to Login
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            </main>
+        )
+    }
+
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-background font-body text-foreground">

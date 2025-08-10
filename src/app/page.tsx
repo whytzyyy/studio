@@ -30,8 +30,15 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push('/dashboard');
-    } catch (err) {
-      setError('Failed to log in. Please check your credentials.');
+    } catch (err: any) {
+      if (err.message === 'auth/email-not-verified') {
+        setError('Please verify your email address before logging in. Check your inbox for a verification link.');
+      } else if (err.code === 'auth/invalid-credential') {
+        setError('Invalid email or password. Please try again.');
+      }
+      else {
+        setError('Failed to log in. Please check your credentials.');
+      }
     }
   };
 

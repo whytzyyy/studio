@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential, updateEmail } from 'firebase/auth';
-import { auth, firestore } from '@/lib/firebase';
+import { auth, firestore, sendEmailVerification } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
 
 interface UserProfile {
@@ -43,35 +43,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      if (user) {
+      // Only set user if they are verified
+      if (user && user.emailVerified) {
+        setUser(user);
         const userDocRef = doc(firestore, 'users', user.uid);
         const unsubProfile = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             const profileData = docSnap.data() as UserProfile;
             checkForBadges(user.uid, profileData);
             setUserProfile(profileData);
-          } else {
-            // This case is primarily for users who signed up before firestore profile creation was implemented.
-            // New users are handled in the signup function.
-            const userEmail = user.email || 'Anonymous';
-            const initialProfile: UserProfile = {
-              displayName: user.displayName || userEmail.split('@')[0],
-              email: user.email || '',
-              photoURL: '/logo.png',
-              tamraBalance: 0,
-              referrals: 0,
-              miningStreak: 0,
-              badges: ['pioneer'], // Award pioneer badge on creation
-              level: 1,
-              completedTasks: [],
-            };
-            setDoc(userDocRef, initialProfile);
           }
           setLoading(false); 
         });
         return () => unsubProfile();
       } else {
+        setUser(null);
         setUserProfile(null);
         setLoading(false);
       }
@@ -111,15 +97,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  const login = (email: string, pass: string) => {
-    return signInWithEmailAndPassword(auth, email, pass);
+  const login = async (email: string, pass: string): Promise<UserCredential> => {
+    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+    if (userCredential.user && !userCredential.user.emailVerified) {
+      await signOut(auth); // Sign out user if email is not verified
+      throw new Error('auth/email-not-verified');
+    }
+    return userCredential;
   };
 
-  const signup = async (email: string, pass: string, referralCode?: string): Promise<UserCredential> => {
+  const signup = async (email: string, pass: string, referralCode?: string): Promise<void> => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const newUser = userCredential.user;
     
     if (newUser) {
+      await sendEmailVerification(newUser);
+
       // Create document for the new user
       const userDocRef = doc(firestore, 'users', newUser.uid);
       await setDoc(userDocRef, {
@@ -140,15 +133,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const referrerDocRef = doc(firestore, 'users', referralCode);
         const referrerDoc = await getDoc(referrerDocRef);
         if (referrerDoc.exists()) {
-          // Award referrer
           await updateDoc(referrerDocRef, {
             tamraBalance: increment(100),
             referrals: increment(1)
           });
         }
       }
+      
+      await signOut(auth);
+    } else {
+        throw new Error("Could not create user.");
     }
-    return userCredential;
   };
 
   const logout = () => {
