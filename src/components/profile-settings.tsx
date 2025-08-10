@@ -109,7 +109,7 @@ export function ProfileSettings() {
             <div className="text-center">
                  <h2 className="text-2xl font-bold flex items-center gap-2">
                   <span>{displayName}</span>
-                  <BadgeCheck className="h-6 w-6 text-blue-500" />
+                  <BadgeCheck className="h-6 w-6 text-accent" />
                  </h2>
                  <p className="text-muted-foreground">{user?.email}</p>
             </div>
