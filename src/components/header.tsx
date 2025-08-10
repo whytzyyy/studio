@@ -6,26 +6,15 @@ import { useRouter } from 'next/navigation';
 import { SidebarTrigger } from './ui/sidebar';
 
 export function Header() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
-
-  const handleLogout = async () => {
-    await logout();
-    router.push('/');
-  };
 
   return (
     <header className="absolute top-0 left-0 w-full z-20 flex items-center justify-between p-4 sm:p-6 lg:p-8">
       <SidebarTrigger className="md:hidden"/>
       <div></div>
       <div className="flex items-center gap-4">
-        {user ? (
-          <>
-            <Button onClick={handleLogout} variant="outline">
-              Logout
-            </Button>
-          </>
-        ) : (
+        {!user && (
           <>
             <Button asChild variant="ghost">
               <Link href="/">Login</Link>

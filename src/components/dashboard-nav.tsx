@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from '@/components/ui/sidebar';
-import { LayoutDashboard, Gift, Users, Trophy, BookOpen, LifeBuoy, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Gift, Users, Trophy, BookOpen, LifeBuoy, UserCircle, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from './ui/separator';
+import { useAuth } from '@/hooks/useAuth';
+import { Button } from './ui/button';
 
 const navItems = [
   {
@@ -50,11 +52,21 @@ const helpAndProfileItems = [
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { setOpenMobile } = useSidebar();
+  const { logout } = useAuth();
+
 
   const handleLinkClick = () => {
     setOpenMobile(false);
   }
+
+  const handleLogout = async () => {
+    handleLinkClick();
+    await logout();
+    router.push('/');
+  };
+
 
   return (
     <nav className="flex-1 overflow-auto p-4 flex flex-col justify-between">
@@ -88,6 +100,15 @@ export function DashboardNav() {
             </Link>
           </SidebarMenuItem>
         ))}
+        <SidebarMenuItem>
+            <SidebarMenuButton
+            onClick={handleLogout}
+            className="w-full justify-start text-destructive hover:text-destructive"
+            >
+                <LogOut className="h-5 w-5 mr-3" />
+                <span className="truncate">Logout</span>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
       </SidebarMenu>
     </nav>
   );
