@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LayoutDashboard, Gift, Users, Trophy, BookOpen } from 'lucide-react';
+import { LayoutDashboard, Gift, Users, Trophy, BookOpen, LifeBuoy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -31,6 +31,11 @@ const navItems = [
     href: '/dashboard/guide',
     label: 'Badge Guide',
     icon: BookOpen,
+  },
+  {
+    href: '/dashboard/help',
+    label: 'Help & Feedback',
+    icon: LifeBuoy,
   },
 ];
 
