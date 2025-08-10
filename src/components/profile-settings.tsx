@@ -8,28 +8,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserCircle, Lock, Mail } from 'lucide-react';
+import { UserCircle, Lock } from 'lucide-react';
 import { UserBadges } from './user-badges';
 import { Separator } from './ui/separator';
 
 export function ProfileSettings() {
-  const { user, userProfile, updateUserProfile, reauthenticate, updateUserPassword, updateUserEmail } = useAuth();
+  const { user, userProfile, updateUserProfile, reauthenticate, updateUserPassword } = useAuth();
   const { toast } = useToast();
 
   const [displayName, setDisplayName] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [newEmail, setNewEmail] = useState('');
 
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
-  const [isSavingEmail, setIsSavingEmail] = useState(false);
 
   useEffect(() => {
     if (userProfile) {
       setDisplayName(userProfile.displayName || '');
-      setNewEmail(userProfile.email || '');
     }
   }, [userProfile]);
 
@@ -93,30 +90,6 @@ export function ProfileSettings() {
     }
   };
   
-    // Note: Changing email is not implemented as it requires re-authentication,
-    // which is already used for password changes. A more complex flow (e.g., modals)
-    // would be needed to handle both gracefully. For now, we disable this feature.
-  const handleEmailUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSavingEmail(true);
-    try {
-      await reauthenticate(currentPassword);
-      await updateUserEmail(newEmail);
-      toast({
-        title: "Email Updated",
-        description: "Your email has been successfully changed.",
-      });
-       setCurrentPassword('');
-    } catch (error: any) {
-       toast({
-        variant: "destructive",
-        title: "Email Change Failed",
-        description: "Please check your current password and try again.",
-      });
-    } finally {
-      setIsSavingEmail(false);
-    }
-  };
 
   return (
     <div className="space-y-8">
@@ -130,7 +103,7 @@ export function ProfileSettings() {
         <CardContent className="space-y-6">
           <div className="flex flex-col items-center gap-4">
             <Avatar className="h-24 w-24 border-2 border-accent">
-              <AvatarImage src="/logo.png" alt={displayName} />
+              <AvatarImage src="/logo.png" alt={displayName} className="p-2" />
               <AvatarFallback>{displayName?.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="text-center">
