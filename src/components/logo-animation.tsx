@@ -23,6 +23,7 @@ export function LogoAnimation({ animated = true }: { animated?: boolean }) {
           alt="Tamra Vault Logo"
           className={cn(
             "logo-image-wrapper h-32 w-32 md:h-40 md:w-40 object-contain",
+            "animate-in fade-in-0 slide-in-from-bottom-10 duration-1000",
             animated && "animate-float-up"
           )}
         />
