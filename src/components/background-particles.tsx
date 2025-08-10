@@ -9,16 +9,16 @@ export function BackgroundParticles() {
     const generateParticles = () => {
       if (typeof window === 'undefined') return;
       const particleArray = [];
-      const numParticles = 20;
+      const numParticles = 50; // Increased from 20 to 50
       for (let i = 0; i < numParticles; i++) {
-        const size = Math.random() * 5 + 2;
+        const size = Math.random() * 7 + 3; // Increased size variation
         const style = {
           width: `${size}px`,
           height: `${size}px`,
           left: `${Math.random() * 100}%`,
           top: `${Math.random() * 100}%`,
           animationDelay: `${Math.random() * 25}s`,
-          animationDuration: `${Math.random() * 15 + 20}s`,
+          animationDuration: `${Math.random() * 20 + 25}s`, // Varied duration
         };
         particleArray.push(<div key={i} className="particle animate-float" style={style} />);
       }

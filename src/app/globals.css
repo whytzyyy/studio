@@ -76,11 +76,10 @@
   }
   .particle {
     @apply absolute rounded-full;
-    background-color: hsla(28, 54%, 61%, 0.2);
+    background-color: hsla(var(--primary), 0.3);
   }
   .background-glow {
     @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2;
     background-image: radial-gradient(circle at center, hsla(var(--primary), 0.15) 0%, transparent 60%);
-    animation: pulse-glow 10s infinite ease-in-out;
   }
 }

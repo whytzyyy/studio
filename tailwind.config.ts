@@ -79,9 +79,11 @@ export default {
           },
         },
         'float': {
-          '0%': { transform: 'translateY(0px) translateX(0px)', opacity: '0.2' },
-          '50%': { transform: 'translateY(-200px) translateX(100px)', opacity: '0.5' },
-          '100%': { transform: 'translateY(0px) translateX(0px)', opacity: '0.2' },
+          '0%': { transform: 'translateY(0px) translateX(0px)', opacity: '0.1' },
+          '25%': { transform: 'translateY(-150px) translateX(50px)', opacity: '0.4' },
+          '50%': { transform: 'translateY(-50px) translateX(150px)', opacity: '0.2' },
+          '75%': { transform: 'translateY(50px) translateX(-50px)', opacity: '0.5' },
+          '100%': { transform: 'translateY(0px) translateX(0px)', opacity: '0.1' },
         },
         'float-up': {
           '0%, 100%': { transform: 'translateY(0px)' },
