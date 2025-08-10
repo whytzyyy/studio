@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton, useSidebar } from '@/components/ui/sidebar';
 import { LayoutDashboard, Gift, Users, Trophy, BookOpen, LifeBuoy, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from './ui/separator';
@@ -50,13 +50,18 @@ const helpAndProfileItems = [
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    setOpenMobile(false);
+  }
 
   return (
     <nav className="flex-1 overflow-auto p-4 flex flex-col justify-between">
       <SidebarMenu>
         {navItems.map((item) => (
           <SidebarMenuItem key={item.href}>
-            <Link href={item.href}>
+            <Link href={item.href} onClick={handleLinkClick}>
               <SidebarMenuButton
                 isActive={pathname === item.href}
                 className="w-full justify-start"
@@ -72,7 +77,7 @@ export function DashboardNav() {
         <Separator className="my-2" />
          {helpAndProfileItems.map((item) => (
           <SidebarMenuItem key={item.href}>
-            <Link href={item.href}>
+            <Link href={item.href} onClick={handleLinkClick}>
               <SidebarMenuButton
                 isActive={pathname === item.href}
                 className="w-full justify-start"
