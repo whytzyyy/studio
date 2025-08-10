@@ -43,6 +43,11 @@ export default function SignupPage() {
       setError('Passwords do not match.');
       return;
     }
+    
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
 
     try {
       await signup(email, password, referralCode || undefined);
@@ -50,8 +55,11 @@ export default function SignupPage() {
     } catch (err: any) {
         if (err.code === 'auth/email-already-in-use') {
             setError('This email is already registered. Please log in.');
-        } else {
-            console.error(err);
+        } else if (err.code === 'auth/weak-password') {
+            setError('Password is too weak. Please use at least 6 characters.');
+        }
+        else {
+            console.error('Signup Error:', err);
             setError('Failed to sign up. Please try again.');
         }
     }

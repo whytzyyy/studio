@@ -31,11 +31,12 @@ export default function LoginPage() {
       await login(email, password);
       router.push('/dashboard');
     } catch (err: any) {
-      if (err.code === 'auth/invalid-credential') {
+      // More specific error handling
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
         setError('Invalid email or password. Please try again.');
-      }
-      else {
-        setError('Failed to log in. Please check your credentials.');
+      } else {
+        console.error('Login Error:', err);
+        setError('An unexpected error occurred. Please try again later.');
       }
     }
   };
