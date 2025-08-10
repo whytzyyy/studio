@@ -59,7 +59,7 @@ export function CommunityStats() {
     });
 
     const usersRef = collection(firestore, 'users');
-    const q = query(usersRef, orderBy('referrals', 'desc'), limit(5));
+    const q = query(usersRef, orderBy('referrals', 'desc'), limit(10));
 
     const unsubscribeReferrers = onSnapshot(q, (querySnapshot) => {
       const referrers: Referrer[] = [];
@@ -291,7 +291,7 @@ export function CommunityStats() {
                             <span className="truncate">{refUser.name}</span>
                         </div>
                     </TableCell>
-                    <TableCell className="text-right font-mono">{Number.isFinite(refUser.referrals) ? refUser.referrals : 0}</TableCell>
+                    <TableCell className="text-right font-mono">{refUser.referrals.toLocaleString()}</TableCell>
                     </TableRow>
                 ))}
                 </TableBody>
