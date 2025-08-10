@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserCircle, Lock } from 'lucide-react';
+import { UserCircle, Lock, BadgeCheck } from 'lucide-react';
 import { UserBadges } from './user-badges';
 import { Separator } from './ui/separator';
 
@@ -107,7 +107,10 @@ export function ProfileSettings() {
               <AvatarFallback>{displayName?.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="text-center">
-                 <h2 className="text-2xl font-bold">{displayName}</h2>
+                 <h2 className="text-2xl font-bold flex items-center gap-2">
+                  <span>{displayName}</span>
+                  <BadgeCheck className="h-6 w-6 text-blue-500" />
+                 </h2>
                  <p className="text-muted-foreground">{user?.email}</p>
             </div>
             <UserBadges />
