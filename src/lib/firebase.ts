@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, sendEmailVerification } from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 
@@ -34,4 +34,4 @@ if (typeof window !== 'undefined') {
 const auth = getAuth(app);
 const firestore = getFirestore(app);
 
-export { app, auth, firestore, sendEmailVerification };
+export { app, auth, firestore };

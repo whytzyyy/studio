@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential, updateEmail } from 'firebase/auth';
-import { auth, firestore, sendEmailVerification } from '@/lib/firebase';
+import { auth, firestore } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
 
 interface UserProfile {
@@ -43,8 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      // Only set user if they are verified
-      if (user && user.emailVerified) {
+      if (user) {
         setUser(user);
         const userDocRef = doc(firestore, 'users', user.uid);
         const unsubProfile = onSnapshot(userDocRef, (docSnap) => {
@@ -98,21 +97,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const login = async (email: string, pass: string): Promise<UserCredential> => {
-    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-    if (userCredential.user && !userCredential.user.emailVerified) {
-      await signOut(auth); // Sign out user if email is not verified
-      throw new Error('auth/email-not-verified');
-    }
-    return userCredential;
+    return signInWithEmailAndPassword(auth, email, pass);
   };
 
-  const signup = async (email: string, pass: string, referralCode?: string): Promise<void> => {
+  const signup = async (email: string, pass: string, referralCode?: string): Promise<UserCredential> => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const newUser = userCredential.user;
     
     if (newUser) {
-      await sendEmailVerification(newUser);
-
       // Create document for the new user
       const userDocRef = doc(firestore, 'users', newUser.uid);
       await setDoc(userDocRef, {
@@ -139,8 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
         }
       }
-      
-      await signOut(auth);
+      return userCredential;
     } else {
         throw new Error("Could not create user.");
     }
