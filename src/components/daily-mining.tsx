@@ -7,14 +7,34 @@ import { Progress } from '@/components/ui/progress';
 import { Clock } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from "@/hooks/use-toast";
+import { doc, onSnapshot } from 'firebase/firestore';
+import { firestore } from '@/lib/firebase';
 
 const COOLDOWN_HOURS = 24;
+const TOTAL_SUPPLY_CAP = 50000000;
+
 
 export function DailyMining() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [lastClaim, setLastClaim] = useState<number | null>(null);
+  const [isCapped, setIsCapped] = useState(false);
   const { user, userProfile, updateUserBalance, updateUserStreak } = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const statsDocRef = doc(firestore, 'community-stats', 'live');
+    const unsubscribe = onSnapshot(statsDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if ((data.totalTamraClaimed || 0) >= TOTAL_SUPPLY_CAP) {
+          setIsCapped(true);
+        } else {
+            setIsCapped(false);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -76,11 +96,11 @@ export function DailyMining() {
             title: 'Claim Successful!',
             description: `You've claimed 50 TAMRA. Your mining streak is now ${newStreak} days!`,
         });
-    } catch (error) {
+    } catch (error: any) {
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Failed to claim tokens. Please try again.",
+            description: error.message || "Failed to claim tokens. Please try again.",
         });
         console.error("Failed to claim:", error);
     }
@@ -88,6 +108,7 @@ export function DailyMining() {
   
   const isClaimable = timeLeft <= 0;
   const progress = lastClaim ? Math.min(100, ((COOLDOWN_HOURS * 3600 * 1000 - timeLeft) / (COOLDOWN_HOURS * 3600 * 1000)) * 100) : 100;
+  const isButtonDisabled = !isClaimable || isCapped;
 
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -96,6 +117,12 @@ export function DailyMining() {
     const seconds = totalSeconds % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
+
+  const getButtonText = () => {
+    if (isCapped) return 'Total Supply Reached';
+    if (isClaimable) return 'Claim Now';
+    return `Claim in ${formatTime(timeLeft)}`;
+  }
 
   return (
     <Card className="h-full border-2 border-primary/20 bg-card/50 backdrop-blur-sm">
@@ -108,10 +135,10 @@ export function DailyMining() {
           <span className="text-copper-gradient">50</span> TAMRA
         </div>
         <div className="w-full max-w-md space-y-4">
-          <Button onClick={handleClaim} disabled={!isClaimable} size="lg" className="w-full text-lg font-bold bg-copper-gradient text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted">
-            {isClaimable ? 'Claim Now' : `Claim in ${formatTime(timeLeft)}`}
+          <Button onClick={handleClaim} disabled={isButtonDisabled} size="lg" className="w-full text-lg font-bold bg-copper-gradient text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted">
+            {getButtonText()}
           </Button>
-          {!isClaimable && (
+          {!isClaimable && !isCapped && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
@@ -122,6 +149,11 @@ export function DailyMining() {
               </div>
               <Progress value={progress} className="h-2 [&>div]:bg-copper-gradient" />
             </div>
+          )}
+           {isCapped && (
+            <p className="text-center text-sm text-destructive font-semibold">
+              The total supply of 50,000,000 TAMRA has been claimed. No more tokens can be mined.
+            </p>
           )}
         </div>
       </CardContent>

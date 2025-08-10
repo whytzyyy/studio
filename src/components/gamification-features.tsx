@@ -7,8 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Award, Star, Zap, Dices } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/hooks/useAuth';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { firestore } from '@/lib/firebase';
 
 const SPIN_COOLDOWN_HOURS = 24;
+const TOTAL_SUPPLY_CAP = 50000000;
+
 
 const prizePool = [
     ...Array(40).fill(10), // 40% chance for 10 TAMRA
@@ -22,9 +26,26 @@ export function GamificationFeatures() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [lastSpin, setLastSpin] = useState<number | null>(null);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [isCapped, setIsCapped] = useState(false);
+
 
   const { toast } = useToast();
   const { userProfile, updateUserBalance } = useAuth();
+
+  useEffect(() => {
+    const statsDocRef = doc(firestore, 'community-stats', 'live');
+    const unsubscribe = onSnapshot(statsDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if ((data.totalTamraClaimed || 0) >= TOTAL_SUPPLY_CAP) {
+          setIsCapped(true);
+        } else {
+            setIsCapped(false);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const storedLastSpin = localStorage.getItem('tamra-last-spin');
@@ -57,7 +78,7 @@ export function GamificationFeatures() {
 
 
   const handleSpin = () => {
-    if (isSpinning || timeLeft > 0) return;
+    if (isSpinning || timeLeft > 0 || isCapped) return;
 
     setIsSpinning(true);
     setSpinResult(null);
@@ -77,11 +98,11 @@ export function GamificationFeatures() {
           title: 'Congratulations!',
           description: `You won ${result} TAMRA from the lucky spin!`,
         });
-      } catch (error) {
+      } catch (error: any) {
         toast({
             variant: "destructive",
             title: "Error",
-            description: "Failed to update your balance. Please try again.",
+            description: error.message || "Failed to update your balance. Please try again.",
         });
         console.error("Failed to update balance:", error);
       }
@@ -97,6 +118,13 @@ export function GamificationFeatures() {
     const seconds = totalSeconds % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
+
+  const getButtonText = () => {
+    if (isCapped) return 'Total Supply Reached';
+    if (isSpinning) return 'Spinning...';
+    if (isSpinAvailable) return 'Spin Now';
+    return `Spin in ${formatTime(timeLeft)}`;
+  }
 
   return (
     <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
@@ -120,10 +148,15 @@ export function GamificationFeatures() {
             <h3 className="font-headline text-lg mb-2 flex items-center gap-2"><Dices className="text-accent" /> Daily Lucky Spin</h3>
             <div className="rounded-lg border border-border/50 bg-background p-4 flex flex-col items-center space-y-4">
                 <p className="text-muted-foreground">Spin for a chance to win up to 200 TAMRA!</p>
-                <Button onClick={handleSpin} disabled={isSpinning || !isSpinAvailable} className="bg-copper-gradient text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
-                    {isSpinning ? 'Spinning...' : (isSpinAvailable ? 'Spin Now' : `Spin in ${formatTime(timeLeft)}`)}
+                <Button onClick={handleSpin} disabled={isSpinning || !isSpinAvailable || isCapped} className="bg-copper-gradient text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
+                    {getButtonText()}
                 </Button>
-                {spinResult !== null && (
+                 {isCapped && (
+                    <p className="text-center text-xs text-destructive font-semibold pt-2">
+                        The total supply cap has been reached. Lucky spin is disabled.
+                    </p>
+                )}
+                {spinResult !== null && !isCapped && (
                     <p className="font-bold text-lg animate-in fade-in">You won <span className="text-copper-gradient">{spinResult} TAMRA</span>!</p>
                 )}
             </div>

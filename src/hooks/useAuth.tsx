@@ -3,7 +3,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, reauthenticateWithCredential, EmailAuthProvider, updatePassword, UserCredential } from 'firebase/auth';
 import { auth, firestore } from '@/lib/firebase';
-import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion, getDoc, runTransaction } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc, increment, arrayUnion, getDoc, runTransaction, collection, query, orderBy, getDocs } from 'firebase/firestore';
 
 interface ReferredUser {
   uid: string;
@@ -41,6 +41,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const TOTAL_SUPPLY_CAP = 50000000;
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -130,28 +132,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         referredUsers: []
       });
 
-      // Increment global member count
       const statsDocRef = doc(firestore, 'community-stats', 'live');
-      await setDoc(statsDocRef, { totalMembers: increment(1) }, { merge: true });
+      
+      await runTransaction(firestore, async (transaction) => {
+        const statsDoc = await transaction.get(statsDocRef);
+        const currentTotal = statsDoc.data()?.totalTamraClaimed || 0;
 
+        if (currentTotal >= TOTAL_SUPPLY_CAP) {
+            // Don't add new member if cap is reached? Or just don't give referral bonus.
+            // For now, we will still add the member but block token rewards.
+             transaction.set(statsDocRef, { totalMembers: increment(1) }, { merge: true });
+        } else {
+            transaction.set(statsDocRef, { totalMembers: increment(1) }, { merge: true });
 
-      // Handle referral if code is provided
-      if (referralCode) {
-        const referrerDocRef = doc(firestore, 'users', referralCode);
-        const referrerDoc = await getDoc(referrerDocRef);
-        if (referrerDoc.exists()) {
-          const newReferredUser: ReferredUser = {
-            uid: newUser.uid,
-            displayName: newUserDisplayName,
-            joinedAt: new Date().toISOString(),
-          };
-          await updateDoc(referrerDocRef, {
-            tamraBalance: increment(100),
-            referrals: increment(1),
-            referredUsers: arrayUnion(newReferredUser)
-          });
+            if (referralCode) {
+                const referrerDocRef = doc(firestore, 'users', referralCode);
+                const referrerDoc = await transaction.get(referrerDocRef);
+                if (referrerDoc.exists()) {
+                    const newReferredUser: ReferredUser = {
+                        uid: newUser.uid,
+                        displayName: newUserDisplayName,
+                        joinedAt: new Date().toISOString(),
+                    };
+                    transaction.update(referrerDocRef, {
+                        tamraBalance: increment(100),
+                        referrals: increment(1),
+                        referredUsers: arrayUnion(newReferredUser)
+                    });
+                    // Also update the global claimed count for the referral bonus
+                    transaction.set(statsDocRef, { totalTamraClaimed: increment(100) }, { merge: true });
+                }
+            }
         }
-      }
+
+      });
       return userCredential;
     } else {
         throw new Error("Could not create user.");
@@ -195,20 +209,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUserBalance = async (amount: number) => {
     const user = auth.currentUser;
-    if (user && amount > 0) {
-      const userDocRef = doc(firestore, 'users', user.uid);
-      const statsDocRef = doc(firestore, 'community-stats', 'live');
-      
-      await runTransaction(firestore, async (transaction) => {
-        // Increment user balance
-        transaction.update(userDocRef, { tamraBalance: increment(amount) });
-        // Increment global claimed amount
-        transaction.set(statsDocRef, { totalTamraClaimed: increment(amount) }, { merge: true });
-      });
-
-    } else if (!user) {
-      throw new Error("No user logged in to update balance.");
+    if (!user || amount <= 0) {
+        throw new Error("Invalid user or amount.");
     }
+    
+    const userDocRef = doc(firestore, 'users', user.uid);
+    const statsDocRef = doc(firestore, 'community-stats', 'live');
+    
+    await runTransaction(firestore, async (transaction) => {
+        const statsDoc = await transaction.get(statsDocRef);
+        const currentTotal = statsDoc.data()?.totalTamraClaimed || 0;
+
+        if (currentTotal >= TOTAL_SUPPLY_CAP) {
+            throw new Error("Total supply cap reached. Cannot claim more tokens.");
+        }
+        
+        // Ensure we don't overshoot the cap
+        const awardableAmount = Math.min(amount, TOTAL_SUPPLY_CAP - currentTotal);
+        if (awardableAmount <= 0) {
+             throw new Error("Total supply cap reached. Cannot claim more tokens.");
+        }
+
+        transaction.update(userDocRef, { tamraBalance: increment(awardableAmount) });
+        transaction.set(statsDocRef, { totalTamraClaimed: increment(awardableAmount) }, { merge: true });
+    });
   };
   
   const updateUserStreak = async (streak: number) => {
@@ -223,34 +247,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const completeSocialTask = async (taskId: string, reward: number) => {
     const user = auth.currentUser;
-    if (user) {
-      const userDocRef = doc(firestore, 'users', user.uid);
-      const statsDocRef = doc(firestore, 'community-stats', 'live');
-      
-      await runTransaction(firestore, async (transaction) => {
+     if (!user) {
+        throw new Error("You must be logged in to complete a task.");
+    }
+
+    const userDocRef = doc(firestore, 'users', user.uid);
+    const statsDocRef = doc(firestore, 'community-stats', 'live');
+    
+    await runTransaction(firestore, async (transaction) => {
         const userDoc = await transaction.get(userDocRef);
         if (!userDoc.exists()) {
-          throw new Error("User document does not exist!");
+            throw new Error("User document does not exist!");
         }
 
         const completedTasks = userDoc.data().completedTasks || [];
         if (completedTasks.includes(taskId)) {
-          throw new Error("You have already completed this task.");
+            throw new Error("You have already completed this task.");
         }
 
-        // Update user's doc
+        const statsDoc = await transaction.get(statsDocRef);
+        const currentTotal = statsDoc.data()?.totalTamraClaimed || 0;
+
+        if (currentTotal >= TOTAL_SUPPLY_CAP) {
+            throw new Error("Total supply cap reached. Cannot claim rewards.");
+        }
+
+        const awardableAmount = Math.min(reward, TOTAL_SUPPLY_CAP - currentTotal);
+        if (awardableAmount <= 0) {
+             throw new Error("Total supply cap reached. Cannot claim rewards.");
+        }
+
         transaction.update(userDocRef, {
-          tamraBalance: increment(reward),
-          completedTasks: arrayUnion(taskId)
+            tamraBalance: increment(awardableAmount),
+            completedTasks: arrayUnion(taskId)
         });
 
-        // Update global stats
-        transaction.set(statsDocRef, { totalTamraClaimed: increment(reward) }, { merge: true });
-      });
-
-    } else {
-      throw new Error("You must be logged in to complete a task.");
-    }
+        transaction.set(statsDocRef, { totalTamraClaimed: increment(awardableAmount) }, { merge: true });
+    });
   };
 
   const submitSolanaAddress = async (address: string) => {

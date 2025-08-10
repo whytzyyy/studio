@@ -6,7 +6,7 @@ import { CheckCircle2, Gift } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from "@/hooks/use-toast";
 import { firestore } from '@/lib/firebase';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc } from 'firebase/firestore';
 
 const XIcon = () => <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current"><title>X</title><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"/></svg>;
 const TelegramIcon = () => <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 fill-current"><title>Telegram</title><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.17.91-.494 1.202-.82 1.23-.696.065-1.225-.46-1.9-1.088-1.055-.965-1.637-1.564-2.67-2.515-.7-.645-.24-.963.15-.658.985.765 1.745 1.561 2.42 2.127.34.288.635.136.709-.236.13-.646.777-4.113.823-4.475.025-.19-.058-.335-.25-.213-1.045.64-1.808 1.05-2.618 1.54-.76.45-.34.66.14.47.803-.31 3.2-1.94 3.32-2.05a.51.51 0 0 1 .533.14z"/></svg>;
@@ -26,17 +26,32 @@ interface SocialTask {
   link: string;
   order: number;
 }
+const TOTAL_SUPPLY_CAP = 50000000;
+
 
 export function SocialTasks() {
   const [tasksList, setTasksList] = useState<SocialTask[]>([]);
+  const [isCapped, setIsCapped] = useState(false);
   const { userProfile, completeSocialTask } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
+   useEffect(() => {
+    const statsDocRef = doc(firestore, 'community-stats', 'live');
+    const unsubscribeStats = onSnapshot(statsDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if ((data.totalTamraClaimed || 0) >= TOTAL_SUPPLY_CAP) {
+          setIsCapped(true);
+        } else {
+          setIsCapped(false);
+        }
+      }
+    });
+
     const tasksCollectionRef = collection(firestore, 'social-tasks');
     const q = query(tasksCollectionRef, orderBy('order', 'asc'));
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const unsubscribeTasks = onSnapshot(q, (querySnapshot) => {
       const tasks: SocialTask[] = [];
       querySnapshot.forEach((doc) => {
         tasks.push({ id: doc.id, ...doc.data() } as SocialTask);
@@ -51,7 +66,10 @@ export function SocialTasks() {
         });
     });
 
-    return () => unsubscribe();
+    return () => {
+        unsubscribeStats();
+        unsubscribeTasks();
+    };
   }, [toast]);
 
 
@@ -90,6 +108,11 @@ export function SocialTasks() {
       <CardHeader>
         <CardTitle className="font-headline text-2xl flex items-center gap-2"><Gift />Social Tasks</CardTitle>
         <CardDescription>Complete tasks to earn extra TAMRA tokens. More tasks coming soon!</CardDescription>
+         {isCapped && (
+            <p className="text-sm text-destructive font-semibold pt-2">
+              The total supply cap has been reached. Rewards for social tasks are disabled.
+            </p>
+          )}
       </CardHeader>
       <CardContent className="space-y-4">
         {tasksList.map((task) => (
@@ -110,6 +133,7 @@ export function SocialTasks() {
               <Button 
                 variant="outline" 
                 onClick={() => handleCompleteTask(task.id, task.reward, task.link)}
+                disabled={isCapped}
               >
                 Complete Task
               </Button>
