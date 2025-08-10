@@ -103,7 +103,7 @@ export function ProfileSettings() {
         <CardContent className="space-y-6">
           <div className="flex flex-col items-center gap-4">
             <Avatar className="h-24 w-24 border-2 border-accent">
-              <AvatarImage src="/logo.png" alt={displayName} className="p-2" />
+              <AvatarImage src="/logo.png" alt={displayName} className="p-4" />
               <AvatarFallback>{displayName?.substring(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="text-center">
