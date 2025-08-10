@@ -42,7 +42,7 @@ export function DashboardNav() {
       <SidebarMenu>
         {navItems.map((item) => (
           <SidebarMenuItem key={item.href}>
-            <Link href={item.href} passHref legacyBehavior>
+            <Link href={item.href}>
               <SidebarMenuButton
                 isActive={pathname === item.href}
                 className="w-full justify-start"
